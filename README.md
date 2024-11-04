@@ -1,2 +1,6 @@
 # citrea-hackerhouse
-my repo for the citrea hacker house, TODO write better description
+
+Current plan is:
+
+- `circuits/` core circuits to generate private transfers
+- `lib/` contains all helper functions used in this library
