@@ -2,7 +2,15 @@ use std::field::bn254;
 use std::ec::tecurve::affine::{Curve, Point};
 
 /**
-* The signature verification function currently used in Roman Kyoto 
+
+The signature verification function currently used in Roman Kyoto 
+Explanation of values:
+
+hashed_data_mod is calculated by doing:
+
+bytes memory data = abi.encode(_Rp.x, _Rp.y, _Ap.x, _Ap.y, _message);
+uint256 hashed_data_mod = uint256(keccak256(data)) % EdOnBN254.N;
+
 */
 fn sig_verify(
     s: Field,
@@ -48,8 +56,6 @@ fn test_main() {
     let r_point_y = 20074131356615822208770545599252946769984593165978497001274779973332169773999;
     let a_point_x = 414307288439776939451207388462826342822364268833363196167587225599630913764;
     let a_point_y = 16298014798848247278504574911734719567503069246519009660794850501628037273246;
-
-    // this is uint256 _c = uint256(keccak256(data)) % EdOnBN254.N; in solidity
     let hashed_data_mod =
         19723751451262953313713137900621821180413630117769391257529298277378406357992;
 
