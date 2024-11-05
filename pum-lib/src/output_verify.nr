@@ -33,12 +33,22 @@ fn output_verify(
     let v_point = Point::new(v_point_x, v_point_y);
     let c_point = Point::new(c_point_x, c_point_y);
 
+    println(c_point.x);
+
     let bjj = Curve::new(168700, 168696, base);
 
     let r_r_point = bjj.msm([r_amount], [r_point]);
     let v_v_point = bjj.msm([amount], [v_point]);
 
     let sum = bjj.add(r_r_point, v_v_point);
+
+    println("SUM");
+    println(sum.x);
+    println(sum.y);
+
+    println("INPUT C");
+    println(c_point.x);
+    println(c_point.y);
 
     assert(sum == c_point, "Incorrect output");
 }
