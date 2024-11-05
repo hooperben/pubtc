@@ -1,10 +1,5 @@
-use std::embedded_curve_ops::multi_scalar_mul;
-use std::embedded_curve_ops::EmbeddedCurvePoint;
-use std::embedded_curve_ops::EmbeddedCurveScalar;
 use std::field::bn254;
-
 use std::ec::tecurve::affine::{Curve, Point};
-
 
 /**
 * The signature verify function 
@@ -14,7 +9,7 @@ Our Base point is defined as the following:
 x: 6822643173076850086669063981200675861034234425876310494228829770726075732893
 y: 9156654395656950371299901424185770236726741503478930161752204964343448620279
 
-TODO investigate where these figures came from
+TODO investigate where these figures came from, think its some kind of roman kyoto hash point
 */
 fn sig_verify(
   s: Field,
@@ -22,7 +17,8 @@ fn sig_verify(
   r_point_y: Field,
   a_point_x: Field,
   a_point_y: Field,
-  message: Field
+  message: pub str<66>,
+  hashed_data_mod: Field
 ) {
   let bjj = Curve::new(
     168700,
@@ -38,36 +34,69 @@ fn sig_verify(
     9156654395656950371299901424185770236726741503478930161752204964343448620279
   );
 
+  // EdOnBN254.Affine memory _Z = _BASE.neg().mul(_s).add(_Rp).add(
+  //     _Ap.mul(_c)
+  // );
+
   let r_point = Point::new(
     r_point_x,
     r_point_y
   );
+
   let a_point =  Point::new(
     a_point_x,
     a_point_y
   );
 
+  let negged_base_point = base_point.negate();
+  let mul_by_s = bjj.msm([s], [negged_base_point]);
+  let add_rp = bjj.add(mul_by_s, r_point);
+  let ap_mul_c = bjj.msm([hashed_data_mod], [a_point]);
 
-  // let point = multi_scalar_mul([points], [scalars]);
+  let z = bjj.add(add_rp, ap_mul_c);
 
-  // let neg = point.neg();
+  println(z.x);
+  println(z.y);
+
+  print("s: ");
+  println(s);
+
+  print("r.x: ");
+  println(r_point.x);
+
+  print("r.y: ");
+  println(r_point.y);
+
+  print("a.x: ");
+  println(a_point.x);
+
+  print("a.y: ");
+  println(a_point.y);
+
+  print("message: ");
+  println(message);
 }
 
 #[test]
 fn test_main() {
-  // sig_verify(1, 2);
-  let base_point = EmbeddedCurvePoint {
-    x: 6822643173076850086669063981200675861034234425876310494228829770726075732893,
-    y: 9156654395656950371299901424185770236726741503478930161752204964343448620279,
-    is_infinite: false,
-  };
-  
-  let neg_base_point = base_point.neg();
+  let s =  9433542191966121595038338481692622117969362708974223872381781757230788478257 ; 
+  let r_point_x =  12143819321338719521185626133028502939234064632296556775138324697915221654651 ; 
+  let r_point_y =  20074131356615822208770545599252946769984593165978497001274779973332169773999 ; 
+  let a_point_x =  414307288439776939451207388462826342822364268833363196167587225599630913764 ; 
+  let a_point_y =  16298014798848247278504574911734719567503069246519009660794850501628037273246 ; 
+  let hashed_data = "0x5bff8ddcdb307a9aa6de0b9a03b5de3b85844c88f6448ad99eef2cd63cbf5370"; 
+  let message = "0xdea8dbb81e121f519e1cd6999c2ea019215b43eb9b2803bb9a54572747eb2a02";
 
-  println(base_point);
-  println(neg_base_point);
+  // this is         uint256 _c = uint256(keccak256(data)) % EdOnBN254.N; in solidity
+  let hashed_data_mod = 19723751451262953313713137900621821180413630117769391257529298277378406357992;
 
-  // let sums = base_point.add(neg_base_point);
-
-  // println(sums);
+  sig_verify(
+    s,
+    r_point_x,
+    r_point_y,
+    a_point_x,
+    a_point_y,
+    message,
+    hashed_data_mod
+  );
 } 
