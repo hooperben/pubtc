@@ -3,6 +3,9 @@ use std::embedded_curve_ops::EmbeddedCurvePoint;
 use std::embedded_curve_ops::EmbeddedCurveScalar;
 use std::field::bn254;
 
+use std::ec::tecurve::affine::{Curve, Point};
+
+
 /**
 * The signature verify function 
 *
@@ -21,26 +24,28 @@ fn sig_verify(
   a_point_y: Field,
   message: Field
 ) {
-  // TODO this is a different N value to what is in jubjub
-  let edbn254_n = bn254::decompose(21888242871839275222246405745257275088548364400416034343698204186575808495616);
+  let bjj = Curve::new(
+    168700,
+    168696,
+    Point::new(
+      995203441582195749578291179787384436505546430278305826713579947235728471134,
+      5472060717959818805561601436314318772137091100104008585924551046643952123905
+    )
+  );
 
-  let base_point = EmbeddedCurvePoint {
-    x: 6822643173076850086669063981200675861034234425876310494228829770726075732893,
-    y: 9156654395656950371299901424185770236726741503478930161752204964343448620279,
-    is_infinite: false,
-  };
+  let base_point = Point::new(
+    6822643173076850086669063981200675861034234425876310494228829770726075732893,
+    9156654395656950371299901424185770236726741503478930161752204964343448620279
+  );
 
-  let r_point = EmbeddedCurvePoint {
-    x: r_point_x,
-    y: r_point_y,
-    is_infinite: false,
-  };
-
-  let a_point = EmbeddedCurvePoint {
-    x: a_point_x,
-    y: a_point_y,
-    is_infinite: false,
-  };
+  let r_point = Point::new(
+    r_point_x,
+    r_point_y
+  );
+  let a_point =  Point::new(
+    a_point_x,
+    a_point_y
+  );
 
 
   // let point = multi_scalar_mul([points], [scalars]);
