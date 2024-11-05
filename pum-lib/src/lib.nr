@@ -1,2 +1,2 @@
-mod spending_key;
 mod sig_verify;
+mod output_verify;
