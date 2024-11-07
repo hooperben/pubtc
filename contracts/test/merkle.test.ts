@@ -12,17 +12,33 @@ describe("Merkle Tree Test", function () {
   let alice: Wallet;
   let bob: Wallet;
 
+  let poseidon2Hash: any;
+
   before(async () => {
     ({ alice, bob, simpleMerkleTree } = await getTestingAPI());
+
+    poseidon2Hash = await loadPoseidon();
 
     const aliceBal = await alice.provider?.getBalance(alice.address);
     expect(aliceBal).equal(10000000000000000000n);
   });
 
   it("should run", async () => {
-    const initialNote = {
-      amount: 50n,
-    };
+    const notes = [
+      [alice.address, 50n, "BTC"],
+      [alice.address, 100n, "BTC"],
+      [bob.address, 10n, "BTC"],
+      [alice.address, 69n, "BTC"],
+    ];
+
+    console.log(notes);
+
+    const noteHashes = notes.map(
+      (note) =>
+        poseidon2Hash([BigInt(note[0]), note[1], BigInt(123123123)]).toString(), // "BTC" = 123123123
+    );
+
+    console.log(noteHashes);
   });
 
   it("poseidon solidity test", async () => {
@@ -34,7 +50,6 @@ describe("Merkle Tree Test", function () {
   });
 
   it("poseidon ts test", async () => {
-    const poseidon2Hash = await loadPoseidon();
     // // in noir:
     // println(poseidon2::Poseidon2::hash([12341241, 12341241], 2));
     const test = await poseidon2Hash([12341241n, 12341241n]).toString();
