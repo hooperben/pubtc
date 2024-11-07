@@ -1,5 +1,6 @@
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { expect } from "chai";
+import hre from "hardhat";
 
 // Create a wrapper function that uses dynamic import
 const loadPoseidon = async () => {
@@ -17,12 +18,12 @@ describe("Merkle Tree Test", function () {
   const values = [
     ["0x1111111111111111111111111111111111111111", "5000", "USDC"],
     ["0x2222222222222222222222222222222222222222", "69", "USDC"],
-    ["0xAlice", "100", "USDC"],
-    ["0xCharlie", "200", "USDC"],
+    ["0x1111111111111111111111111111111111111111", "100", "USDC"],
+    ["0x1111111111111111111111111111111111111111", "200", "USDC"],
   ];
 
   // (2)
-  const tree = StandardMerkleTree.of(values, ["string", "uint256", "string"]);
+  const tree = StandardMerkleTree.of(values, ["address", "uint256", "string"]);
 
   before(() => {});
 
@@ -49,7 +50,20 @@ describe("Merkle Tree Test", function () {
     console.log(newTree.render());
   });
 
-  it("poseidon test", async () => {
+  it("poseidon solidity test", async () => {
+    const SimpleMerkleTree = await hre.ethers.getContractFactory(
+      "SimpleMerkleTree",
+    );
+    const simpleMerkleTree = await SimpleMerkleTree.deploy(5);
+
+    const test = await simpleMerkleTree.poseidonHash2(12341241n, 12341241n);
+
+    expect(test).eql(
+      "0x0dd8218a93222c13ac6228d4190bc19d01234b5f99e33cc43a16cc0db0759e57",
+    );
+  });
+
+  it("poseidon ts test", async () => {
     const poseidon2Hash = await loadPoseidon();
     // // in noir:
     // println(poseidon2::Poseidon2::hash([12341241, 12341241], 2));
