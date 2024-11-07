@@ -14,12 +14,30 @@ contract SimpleMerkleTree {
     uint256 public maxLeaves; // Maximum leaves based on depth
 
     Poseidon2 poseidon2Hasher;
+    uint32 public immutable levels;
 
-    constructor(uint256 _depth) {
-        require(_depth > 0, "Depth must be greater than 0");
-        depth = _depth;
-        maxLeaves = 2 ** depth;
-        nodes = new bytes32[](2 * maxLeaves - 1); // Array to store nodes of the tree
+    bytes32 EMPTY_NOTE =
+        0x0124e2a36fa18ec18993d7a281e8270ac93340ccf0785ab75e18cc3f4f74296c;
+    uint256 public constant FIELD_SIZE =
+        21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    bytes32 ZERO_VALUE =
+        0x2a3b7d44e9164f5e90a2a1675849ef1e3f6fb923463b69308593e27710f5dfb8;
+
+    // filledSubtrees and roots could be bytes32[size], but using mappings makes it cheaper because
+    // it removes index range check on every interaction
+    mapping(uint256 => bytes32) public filledSubtrees;
+    mapping(uint256 => bytes32) public roots;
+
+    uint32 public constant ROOT_HISTORY_SIZE = 100;
+    uint32 public currentRootIndex = 0;
+    uint32 public nextIndex = 0;
+
+    constructor(uint32 _levels) {
+        require(_levels > 0, "_levels should be greater than zero");
+        require(_levels < 32, "_levels should be less than 32");
+        levels = _levels;
+
+        roots[0] = ZERO_VALUE;
 
         poseidon2Hasher = new Poseidon2();
     }
@@ -32,34 +50,74 @@ contract SimpleMerkleTree {
         return bytes32(test_hash);
     }
 
-    function insert(bytes32 leaf) public {
-        require(nextLeafIndex < maxLeaves, "Tree is full");
+    event LeafAdded(uint256 indexed leafIndex, bytes32 indexed leaf);
 
-        // Set the leaf at the correct position
-        uint256 leafPos = maxLeaves - 1 + nextLeafIndex;
-        nodes[leafPos] = leaf;
-        nextLeafIndex++;
+    function deposit(
+        // bytes32 owner,
+        // uint256 amount,
+        // uint256 asset,
+        bytes32 leaf,
+        bytes32 newRoot
+    ) public {
+        uint256 index = _insert(leaf, newRoot);
+        emit LeafAdded(index, leaf);
+    }
 
-        // Update the Merkle tree by recalculating hashes up to the root
-        uint256 parentPos = (leafPos - 1) / 2;
-        while (parentPos > 0) {
-            uint256 leftChild = 2 * parentPos + 1;
-            uint256 rightChild = leftChild + 1;
-            nodes[parentPos] = keccak256(
-                abi.encodePacked(nodes[leftChild], nodes[rightChild])
-            );
-            parentPos = (parentPos - 1) / 2;
+    function _insert(
+        bytes32,
+        bytes32 _newRoot
+    ) internal returns (uint32 index) {
+        uint32 _nextIndex = nextIndex;
+        require(_nextIndex != uint32(2) ** levels, "Merkle tree is full");
+
+        uint32 newRootIndex = (currentRootIndex + 1) % ROOT_HISTORY_SIZE;
+        currentRootIndex = newRootIndex;
+        roots[newRootIndex] = _newRoot;
+        nextIndex = _nextIndex + 1;
+        return _nextIndex;
+    }
+
+    function hashLeftRight(
+        bytes32 _left,
+        bytes32 _right
+    ) public view returns (bytes32) {
+        require(
+            uint256(_left) < FIELD_SIZE,
+            "_left should be inside the field"
+        );
+        require(
+            uint256(_right) < FIELD_SIZE,
+            "_right should be inside the field"
+        );
+
+        return poseidonHash2(uint256(_left), uint256(_right));
+    }
+
+    /**
+      @dev Whether the root is present in the root history
+    */
+    function isKnownRoot(bytes32 _root) public view returns (bool) {
+        if (_root == 0) {
+            return false;
         }
-
-        // Update the root
-        nodes[0] = keccak256(abi.encodePacked(nodes[1], nodes[2]));
+        uint32 _currentRootIndex = currentRootIndex;
+        uint32 i = _currentRootIndex;
+        do {
+            if (_root == roots[i]) {
+                return true;
+            }
+            if (i == 0) {
+                i = ROOT_HISTORY_SIZE;
+            }
+            i--;
+        } while (i != _currentRootIndex);
+        return false;
     }
 
-    function getRoot() public view returns (bytes32) {
-        return nodes[0];
-    }
-
-    function getNode(uint256 index) public view returns (bytes32) {
-        return nodes[index];
+    /**
+      @dev Returns the last root
+    */
+    function getLastRoot() public view returns (bytes32) {
+        return roots[currentRootIndex];
     }
 }
