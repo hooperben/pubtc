@@ -65,7 +65,18 @@ describe("Merkle Tree Test", function () {
 
     tree.updateLeaf(0, newNoteHashes[0]);
 
+    const proof = tree.getProof(newNoteHashes[0]).map((step) => {
+      return {
+        path: step.position === "right" ? 1 : 0,
+        value: step.data.toString("hex"),
+      };
+    });
+
+    // const paths = proof.map((x) => x.path);
+    // const values = proof.map((x) => x.value);
+
     const newRoot = "0x" + tree.getRoot().toString("hex");
+    console.log(newRoot);
 
     await simpleMerkleTree.deposit(newNoteHashes[0], newRoot);
 
