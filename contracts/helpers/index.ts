@@ -2,12 +2,30 @@ import { Wallet } from "ethers";
 import { SimpleMerkleTree } from "../typechain-types";
 import hre, { ethers } from "hardhat";
 import { byteCode } from "./bytecode";
+import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
+import { Noir } from "@noir-lang/noir_js";
+import { CompiledCircuit } from "@noir-lang/types";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 export const getTestingAPI = async () => {
   let simpleMerkleTree: SimpleMerkleTree;
 
   let alice: Wallet;
   let bob: Wallet;
+
+  let noir: Noir;
+  let backend: BarretenbergBackend;
+
+  // next we initialise our Noir libraries to generate proofs
+  const circuitFile = readFileSync(
+    resolve("../circuits/note_verify/target/note_verify.json"),
+    "utf-8",
+  );
+  const circuit = JSON.parse(circuitFile);
+
+  backend = new BarretenbergBackend(circuit);
+  noir = new Noir(circuit);
 
   const [funder] = await hre.ethers.getSigners();
 
