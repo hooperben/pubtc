@@ -1,8 +1,15 @@
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
-import { poseidonContract, buildPoseidon, BigNumberish } from "circomlibjs";
-import { ethers } from "hardhat";
+import { expect } from "chai";
 
-// import aztec from "@aztec/foundation";
+// Create a wrapper function that uses dynamic import
+const loadPoseidon = async () => {
+  // Use Function constructor to avoid CommonJS static analysis
+  const importModule = new Function(
+    'return import("@aztec/foundation/crypto")',
+  );
+  const module = await importModule();
+  return module.poseidon2Hash;
+};
 
 describe("Merkle Tree Test", function () {
   // values should be an array of notes, containing:
@@ -42,24 +49,14 @@ describe("Merkle Tree Test", function () {
     console.log(newTree.render());
   });
 
-  it.only("poseidon test", async () => {
-    // Create a wrapper function that uses dynamic import
-    const loadPoseidon = async () => {
-      // Use Function constructor to avoid CommonJS static analysis
-      const importModule = new Function(
-        'return import("@aztec/foundation/crypto")',
-      );
-      const module = await importModule();
-      return module.poseidon2Hash;
-    };
+  it("poseidon test", async () => {
+    const poseidon2Hash = await loadPoseidon();
+    // // in noir:
+    // println(poseidon2::Poseidon2::hash([12341241, 12341241], 2));
+    const test = await poseidon2Hash([12341241n, 12341241n]).toString();
 
-    try {
-      const poseidon2Hash = await loadPoseidon();
-      const test = await poseidon2Hash([12341241n, 12341241n]);
-      console.log("Hash result:", test);
-    } catch (error) {
-      console.error("Test execution error:", error);
-      throw error;
-    }
+    expect(test).eql(
+      "0x0dd8218a93222c13ac6228d4190bc19d01234b5f99e33cc43a16cc0db0759e57",
+    );
   });
 });

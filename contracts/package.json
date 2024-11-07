@@ -2,15 +2,21 @@
   "name": "contracts",
   "module": "index.ts",
   "devDependencies": {
+    "@aztec/foundation": "^0.62.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@types/bun": "latest",
+    "@types/circomlibjs": "^0.1.6",
+    "circomlibjs": "^0.1.7",
     "hardhat": "^2.22.15",
+    "merkletreejs": "^0.4.0",
     "ts-node": "^10.9.2"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@openzeppelin/merkle-tree": "^1.0.7"
+    "@aztec/aztec.js": "^0.62.0",
+    "@openzeppelin/merkle-tree": "^1.0.7",
+    "ethers": "^6.13.4"
   }
 }
