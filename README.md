@@ -14,3 +14,12 @@ circuits contains the core circuits required for the roman kyoto MASP.
 ### `pum-lib`
 
 Pum lib is ideally meant to be a component library that contains all core logic
+
+```
+
+bb write_vk -b ./target/<noir_artifact_name>.json
+
+bb write_vk -b ./target/note_verify.json
+
+
+```
