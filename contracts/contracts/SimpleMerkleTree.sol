@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.27;
+pragma solidity ^0.8.24;
 
 import "./Poseidon2/Poseidon2.sol";
 
 import "hardhat/console.sol";
+
+interface UltraVerifier {
+    function verify(
+        bytes calldata _proof,
+        bytes32[] calldata _publicInputs
+    ) external view returns (bool);
+}
 
 contract SimpleMerkleTree {
     using Field for *;
@@ -15,6 +22,8 @@ contract SimpleMerkleTree {
 
     Poseidon2 poseidon2Hasher;
     uint32 public immutable levels;
+
+    UltraVerifier public noteVerifier;
 
     bytes32 EMPTY_NOTE =
         0x0124e2a36fa18ec18993d7a281e8270ac93340ccf0785ab75e18cc3f4f74296c;
@@ -28,11 +37,24 @@ contract SimpleMerkleTree {
     mapping(uint256 => bytes32) public filledSubtrees;
     mapping(uint256 => bytes32) public roots;
 
+    mapping(bytes32 => bool) public nullifierUsed;
+
     uint32 public constant ROOT_HISTORY_SIZE = 100;
     uint32 public currentRootIndex = 0;
     uint32 public nextIndex = 0;
 
-    constructor(uint32 _levels) {
+    function deployFromBytecode(
+        bytes memory bytecode
+    ) public returns (address) {
+        address child;
+        assembly {
+            mstore(0x0, bytecode)
+            child := create(0, 0xa0, calldatasize())
+        }
+        return child;
+    }
+
+    constructor(uint32 _levels, bytes memory bytecode) {
         require(_levels > 0, "_levels should be greater than zero");
         require(_levels < 32, "_levels should be less than 32");
         levels = _levels;
@@ -40,6 +62,8 @@ contract SimpleMerkleTree {
         roots[0] = ZERO_VALUE;
 
         poseidon2Hasher = new Poseidon2();
+
+        noteVerifier = UltraVerifier(deployFromBytecode(bytecode));
     }
 
     function poseidonHash2(uint256 x, uint256 y) public view returns (bytes32) {
@@ -61,6 +85,30 @@ contract SimpleMerkleTree {
     ) public {
         uint256 index = _insert(leaf, newRoot);
         emit LeafAdded(index, leaf);
+    }
+
+    struct InputNote {
+        bytes32 nullifier;
+        bytes32 root;
+    }
+    struct OutputNote {
+        bytes32 leaf;
+        bytes32 root;
+    }
+
+    function transact(
+        InputNote calldata inputNote,
+        OutputNote[] calldata outputNotes
+    ) public {
+        require(!nullifierUsed[inputNote.nullifier], "Nullifier used");
+
+        // run the proof here
+
+        for (uint256 i = 0; i < outputNotes.length; i++) {
+            uint256 index = _insert(outputNotes[i].leaf, outputNotes[i].root);
+            emit LeafAdded(index, outputNotes[i].leaf);
+        }
+        nullifierUsed[inputNote.nullifier];
     }
 
     function _insert(

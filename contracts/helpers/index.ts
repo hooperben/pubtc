@@ -1,6 +1,7 @@
 import { Wallet } from "ethers";
 import { SimpleMerkleTree } from "../typechain-types";
 import hre, { ethers } from "hardhat";
+import { byteCode } from "./bytecode";
 
 export const getTestingAPI = async () => {
   let simpleMerkleTree: SimpleMerkleTree;
@@ -35,7 +36,8 @@ export const getTestingAPI = async () => {
   const SimpleMerkleTree = await hre.ethers.getContractFactory(
     "SimpleMerkleTree",
   );
-  simpleMerkleTree = await SimpleMerkleTree.deploy(5);
+
+  simpleMerkleTree = await SimpleMerkleTree.deploy(5, byteCode);
 
   return { simpleMerkleTree, alice, bob };
 };
