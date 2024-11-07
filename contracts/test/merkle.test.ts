@@ -21,7 +21,7 @@ describe("Merkle Tree Test", function () {
     expect(aliceBal).equal(10000000000000000000n);
   });
 
-  it("should run", async () => {
+  it("merkle tree changes should track", async () => {
     const emptyNote = poseidon2Hash([BigInt(57_69_240)]).toString();
     const emptyNotes = Array(32).fill(emptyNote);
     const noteHashes = emptyNotes;
@@ -59,6 +59,9 @@ describe("Merkle Tree Test", function () {
     const newNoteHashes = notes.map((note) =>
       poseidon2Hash([BigInt(note[0]), note[1], note[2]]).toString(),
     );
+
+    console.log(BigInt(alice.address).toString(16));
+    console.log(newNoteHashes[0]);
 
     tree.updateLeaf(0, newNoteHashes[0]);
 
