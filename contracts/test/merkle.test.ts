@@ -59,17 +59,19 @@ describe("Merkle Tree Test", function () {
     ]);
 
     const btcAssetId = 69_57_420n;
-    const notes = [
-      [alicePosAddress, 50n, btcAssetId],
-      [alicePosAddress, 100n, btcAssetId],
+    const inputNotes = [[alicePosAddress, 50n, btcAssetId]];
+    const outputNotes = [
       [bobPosAddress, 10n, btcAssetId],
-      [alicePosAddress, 69n, btcAssetId],
+      [alicePosAddress, 40n, btcAssetId],
     ];
 
-    const newNoteHashes = notes.map((note) =>
+    const inputNoteHashes = inputNotes.map((note) =>
       poseidon2Hash([BigInt(note[0]), note[1], note[2]]).toString(),
     );
-    tree.updateLeaf(0, newNoteHashes[0]);
+
+    const outputNoteHashes = outputNotes.map((note) =>
+      poseidon2Hash([BigInt(note[0]), note[1], note[2]]).toString(),
+    );
 
     // const proof = tree.getProof(newNoteHashes[0]).map((step) => {
     //   return {
@@ -81,13 +83,36 @@ describe("Merkle Tree Test", function () {
     // const paths = proof.map((x) => x.path);
     // const values = proof.map((x) => x.value);
 
-    const newRoot = "0x" + tree.getRoot().toString("hex");
-    await simpleMerkleTree.deposit(newNoteHashes[0], newRoot);
-
+    // deposit
+    tree.updateLeaf(0, inputNoteHashes[0]);
+    let newRoot = "0x" + tree.getRoot().toString("hex");
+    await simpleMerkleTree.deposit(inputNoteHashes[0], newRoot);
     expect(await simpleMerkleTree.isKnownRoot(newRoot)).to.be.true;
+
+    // transfer 40 to bob from alice
+    tree.updateLeaf(1, outputNoteHashes[0]);
+    const outputRoot1 = "0x" + tree.getRoot().toString("hex");
+
+    tree.updateLeaf(2, outputNoteHashes[0]);
+    const outputRoot2 = "0x" + tree.getRoot().toString("hex");
+
+    const nullifierHash = poseidon2Hash([0, alicePrivateKey, 50, btcAssetId]);
+    const tx = await simpleMerkleTree.transact(
+      {
+        nullifier: nullifierHash.toString(),
+        root: outputRoot1,
+      },
+      outputNoteHashes.map((hash, i) => ({
+        leaf: hash,
+        root: i === 0 ? outputRoot1 : outputRoot2,
+      })),
+    );
+
+    console.log(nullifierHash.toString());
+    expect(await simpleMerkleTree.isKnownRoot(outputRoot2)).to.be.true;
   });
 
-  it("poseidon solidity test", async () => {
+  it("poseidon sol test", async () => {
     const test = await simpleMerkleTree.poseidonHash2(12341241n, 12341241n);
     expect(test).eql(
       "0x0dd8218a93222c13ac6228d4190bc19d01234b5f99e33cc43a16cc0db0759e57",
