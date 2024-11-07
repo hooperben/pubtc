@@ -1,6 +1,9 @@
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { expect } from "chai";
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
+import { SimpleMerkleTree } from "../typechain-types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { Wallet } from "ethers";
 
 // Create a wrapper function that uses dynamic import
 const loadPoseidon = async () => {
@@ -13,49 +16,49 @@ const loadPoseidon = async () => {
 };
 
 describe("Merkle Tree Test", function () {
-  // values should be an array of notes, containing:
-  // owner_pk, amount, assetId
-  const values = [
-    ["0x1111111111111111111111111111111111111111", "5000", "USDC"],
-    ["0x2222222222222222222222222222222222222222", "69", "USDC"],
-    ["0x1111111111111111111111111111111111111111", "100", "USDC"],
-    ["0x1111111111111111111111111111111111111111", "200", "USDC"],
-  ];
+  let simpleMerkleTree: SimpleMerkleTree;
 
-  // (2)
-  const tree = StandardMerkleTree.of(values, ["address", "uint256", "string"]);
+  let alice: Wallet;
+  let bob: Wallet;
 
-  before(() => {});
+  before(async () => {
+    const [funder] = await hre.ethers.getSigners();
 
-  it("should run", async () => {
-    console.log("running");
-    // (3)
-    console.log("Merkle Root:", tree.root);
+    const alice_private_key =
+      "0x91b1ba753a83576e85b0bc41b3335e58a8f5a064bd4379c70b5295221277aa8e";
+    const bob_private_key =
+      "0x04b84dc399d3384bc4b7d5e88567160a897e0cd1bb382713c4db0f4a95d1825f";
 
-    console.log("Initial State:");
-    console.log(tree.render());
+    alice = new ethers.Wallet(alice_private_key, hre.ethers.provider);
+    bob = new ethers.Wallet(bob_private_key, hre.ethers.provider);
 
-    // we want to spent note 3 (alices $100 USDC) and create these 2
-    const outputNotes = [
-      ["0xAlice", "50", "USDC"],
-      ["0xBob", "50", "USDC"],
-    ];
+    // Fund alice and bob with 10 ETH each
+    await funder.sendTransaction({
+      to: alice.address,
+      value: ethers.parseEther("10.0"),
+    });
 
-    const newTree = StandardMerkleTree.of(
-      [...values, ...outputNotes],
-      ["string", "uint256", "string"],
-    );
+    await funder.sendTransaction({
+      to: bob.address,
+      value: ethers.parseEther("10.0"),
+    });
 
-    console.log("New UTXOs added:");
-    console.log(newTree.render());
-  });
+    expect(alice.privateKey).equal(BigInt(alice_private_key));
+    expect(bob.privateKey).equal(BigInt(bob_private_key));
 
-  it("poseidon solidity test", async () => {
     const SimpleMerkleTree = await hre.ethers.getContractFactory(
       "SimpleMerkleTree",
     );
-    const simpleMerkleTree = await SimpleMerkleTree.deploy(5);
+    simpleMerkleTree = await SimpleMerkleTree.deploy(5);
+  });
 
+  it("should run", async () => {
+    const initialNote = {
+      amount: 50n,
+    };
+  });
+
+  it("poseidon solidity test", async () => {
     const test = await simpleMerkleTree.poseidonHash2(12341241n, 12341241n);
 
     expect(test).eql(
