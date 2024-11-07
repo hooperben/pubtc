@@ -1,0 +1,13 @@
+{
+  "name": "contracts",
+  "module": "index.ts",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/bun": "latest",
+    "hardhat": "^2.22.15",
+    "ts-node": "^10.9.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
