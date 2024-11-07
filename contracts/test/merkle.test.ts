@@ -48,36 +48,40 @@ describe("Merkle Tree Test", function () {
 
     expect(await simpleMerkleTree.isKnownRoot("0x" + root)).to.be.true;
 
+    const alicePrivateKey =
+      BigInt(alice.privateKey) %
+      21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+    const alicePosAddress = poseidon2Hash([alicePrivateKey]);
+
+    const bobPosAddress = poseidon2Hash([
+      BigInt(bob.privateKey) %
+        21888242871839275222246405745257275088548364400416034343698204186575808495617n,
+    ]);
+
     const btcAssetId = 69_57_420n;
     const notes = [
-      [alice.address, 50n, btcAssetId],
-      [alice.address, 100n, btcAssetId],
-      [bob.address, 10n, btcAssetId],
-      [alice.address, 69n, btcAssetId],
+      [alicePosAddress, 50n, btcAssetId],
+      [alicePosAddress, 100n, btcAssetId],
+      [bobPosAddress, 10n, btcAssetId],
+      [alicePosAddress, 69n, btcAssetId],
     ];
 
     const newNoteHashes = notes.map((note) =>
       poseidon2Hash([BigInt(note[0]), note[1], note[2]]).toString(),
     );
-
-    console.log(BigInt(alice.address).toString(16));
-    console.log(newNoteHashes[0]);
-
     tree.updateLeaf(0, newNoteHashes[0]);
 
-    const proof = tree.getProof(newNoteHashes[0]).map((step) => {
-      return {
-        path: step.position === "right" ? 1 : 0,
-        value: step.data.toString("hex"),
-      };
-    });
+    // const proof = tree.getProof(newNoteHashes[0]).map((step) => {
+    //   return {
+    //     path: step.position === "right" ? 1 : 0,
+    //     value: step.data.toString("hex"),
+    //   };
+    // });
 
     // const paths = proof.map((x) => x.path);
     // const values = proof.map((x) => x.value);
 
     const newRoot = "0x" + tree.getRoot().toString("hex");
-    console.log(newRoot);
-
     await simpleMerkleTree.deposit(newNoteHashes[0], newRoot);
 
     expect(await simpleMerkleTree.isKnownRoot(newRoot)).to.be.true;
