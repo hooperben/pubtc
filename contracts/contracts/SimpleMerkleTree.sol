@@ -62,8 +62,18 @@ contract SimpleMerkleTree {
         roots[0] = ZERO_VALUE;
 
         poseidon2Hasher = new Poseidon2();
-
         noteVerifier = UltraVerifier(deployFromBytecode(bytecode));
+    }
+
+    function verifyProof(
+        bytes calldata _proof,
+        bytes32[] calldata _publicInputs // [root, nullifier, receiver]
+    ) public view returns (bool) {
+        // check their proof against our verifier contract
+        bool validProof = noteVerifier.verify(_proof, _publicInputs);
+        require(validProof, "Invalid proof :(");
+
+        return true;
     }
 
     function poseidonHash2(uint256 x, uint256 y) public view returns (bytes32) {

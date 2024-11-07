@@ -3,6 +3,8 @@ import { SimpleMerkleTree } from "../typechain-types";
 import { Wallet } from "ethers";
 import { MerkleTree } from "merkletreejs";
 import { getTestingAPI, loadPoseidon } from "../helpers";
+import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
+import { Noir } from "@noir-lang/noir_js";
 
 describe("Merkle Tree Test", function () {
   let simpleMerkleTree: SimpleMerkleTree;
@@ -12,8 +14,11 @@ describe("Merkle Tree Test", function () {
 
   let poseidon2Hash: any;
 
+  let noir: Noir;
+  let backend: BarretenbergBackend;
+
   before(async () => {
-    ({ alice, bob, simpleMerkleTree } = await getTestingAPI());
+    ({ alice, bob, simpleMerkleTree, noir, backend } = await getTestingAPI());
 
     poseidon2Hash = await loadPoseidon();
 
@@ -73,21 +78,18 @@ describe("Merkle Tree Test", function () {
       poseidon2Hash([BigInt(note[0]), note[1], note[2]]).toString(),
     );
 
-    // const proof = tree.getProof(newNoteHashes[0]).map((step) => {
-    //   return {
-    //     path: step.position === "right" ? 1 : 0,
-    //     value: step.data.toString("hex"),
-    //   };
-    // });
-
-    // const paths = proof.map((x) => x.path);
-    // const values = proof.map((x) => x.value);
-
     // deposit
     tree.updateLeaf(0, inputNoteHashes[0]);
-    let newRoot = "0x" + tree.getRoot().toString("hex");
-    await simpleMerkleTree.deposit(inputNoteHashes[0], newRoot);
-    expect(await simpleMerkleTree.isKnownRoot(newRoot)).to.be.true;
+    const firstRoot = "0x" + tree.getRoot().toString("hex");
+    await simpleMerkleTree.deposit(inputNoteHashes[0], firstRoot);
+    expect(await simpleMerkleTree.isKnownRoot(firstRoot)).to.be.true;
+
+    const proof = tree.getProof(inputNoteHashes[0]).map((step) => {
+      return {
+        path: step.position === "right" ? 1 : 0,
+        value: step.data.toString("hex"),
+      };
+    });
 
     // transfer 40 to bob from alice
     tree.updateLeaf(1, outputNoteHashes[0]);
@@ -97,7 +99,7 @@ describe("Merkle Tree Test", function () {
     const outputRoot2 = "0x" + tree.getRoot().toString("hex");
 
     const nullifierHash = poseidon2Hash([0, alicePrivateKey, 50, btcAssetId]);
-    const tx = await simpleMerkleTree.transact(
+    await simpleMerkleTree.transact(
       {
         nullifier: nullifierHash.toString(),
         root: outputRoot1,
@@ -108,8 +110,40 @@ describe("Merkle Tree Test", function () {
       })),
     );
 
-    console.log(nullifierHash.toString());
     expect(await simpleMerkleTree.isKnownRoot(outputRoot2)).to.be.true;
+
+    const paths = proof.map((x) => x.path);
+    const values = proof.map((x) => "0x" + x.value);
+
+    const input = {
+      privateKey: "0x" + alicePrivateKey.toString(16), // Changed privateKey to private_key
+      root: firstRoot,
+      nullifier: nullifierHash.toString(16),
+      inputNote: {
+        address: alicePosAddress.toString(16),
+        amount: 50,
+        asset_id: 6957420,
+        leafIndex: 0,
+        path: paths,
+        path_data: values,
+      },
+      outputNotes: [
+        {
+          amount: 10,
+          asset_id: 69_57_420,
+          owner: alicePosAddress.toString(16),
+        },
+        { amount: 40, asset_id: 69_57_420, owner: bobPosAddress.toString() },
+      ],
+    };
+
+    // generate our zk proof
+    const { witness } = await noir.execute(input);
+    const zkProof = await backend.generateProof(witness);
+
+    // check our proof is valid
+    const isValid = await backend.verifyProof(zkProof);
+    expect(isValid).to.eq(true);
   });
 
   it("poseidon sol test", async () => {

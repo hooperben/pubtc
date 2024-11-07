@@ -57,7 +57,7 @@ export const getTestingAPI = async () => {
 
   simpleMerkleTree = await SimpleMerkleTree.deploy(5, byteCode);
 
-  return { simpleMerkleTree, alice, bob };
+  return { simpleMerkleTree, alice, bob, noir, backend };
 };
 
 export const loadPoseidon = async () => {
