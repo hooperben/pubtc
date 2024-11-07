@@ -21,7 +21,7 @@ describe("Merkle Tree Test", function () {
     expect(aliceBal).equal(10000000000000000000n);
   });
 
-  it.only("should run", async () => {
+  it("should run", async () => {
     const emptyNote = poseidon2Hash([BigInt(57_69_240)]).toString();
     const emptyNotes = Array(32).fill(emptyNote);
     const noteHashes = emptyNotes;
