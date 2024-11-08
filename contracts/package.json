@@ -8,6 +8,7 @@
     "@types/circomlibjs": "^0.1.6",
     "circomlibjs": "^0.1.7",
     "hardhat": "^2.22.15",
+    "hardhat-gas-reporter": "^2.2.1",
     "merkletreejs": "^0.4.0",
     "ts-node": "^10.9.2"
   },

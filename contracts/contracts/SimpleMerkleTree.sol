@@ -3,14 +3,16 @@ pragma solidity ^0.8.24;
 
 import "./Poseidon2/Poseidon2.sol";
 
+import "./verifiers/contract.sol";
+
 import "hardhat/console.sol";
 
-interface UltraVerifier {
-    function verify(
-        bytes calldata _proof,
-        bytes32[] calldata _publicInputs
-    ) external view returns (bool);
-}
+// interface UltraVerifier {
+//     function verify(
+//         bytes calldata _proof,
+//         bytes32[] calldata _publicInputs
+//     ) external view returns (bool);
+// }
 
 contract SimpleMerkleTree {
     using Field for *;
@@ -54,7 +56,7 @@ contract SimpleMerkleTree {
         return child;
     }
 
-    constructor(uint32 _levels, bytes memory bytecode) {
+    constructor(uint32 _levels, address _noteVerifier) {
         require(_levels > 0, "_levels should be greater than zero");
         require(_levels < 32, "_levels should be less than 32");
         levels = _levels;
@@ -62,14 +64,13 @@ contract SimpleMerkleTree {
         roots[0] = ZERO_VALUE;
 
         poseidon2Hasher = new Poseidon2();
-        noteVerifier = UltraVerifier(deployFromBytecode(bytecode));
+        noteVerifier = UltraVerifier(_noteVerifier);
     }
 
     function verifyProof(
         bytes calldata _proof,
-        bytes32[] calldata _publicInputs // [root, nullifier, receiver]
+        bytes32[] calldata _publicInputs
     ) public view returns (bool) {
-        // check their proof against our verifier contract
         bool validProof = noteVerifier.verify(_proof, _publicInputs);
         require(validProof, "Invalid proof :(");
 
@@ -107,14 +108,18 @@ contract SimpleMerkleTree {
     }
 
     function transact(
+        bytes calldata _proof,
+        bytes32[] calldata _publicInputs,
         InputNote calldata inputNote,
         OutputNote[] calldata outputNotes
     ) public {
         require(!nullifierUsed[inputNote.nullifier], "Nullifier used");
 
         // run the proof here
+        verifyProof(_proof, _publicInputs);
 
         for (uint256 i = 0; i < outputNotes.length; i++) {
+            // we need to verify this root
             uint256 index = _insert(outputNotes[i].leaf, outputNotes[i].root);
             emit LeafAdded(index, outputNotes[i].leaf);
         }
@@ -132,6 +137,7 @@ contract SimpleMerkleTree {
         currentRootIndex = newRootIndex;
         roots[newRootIndex] = _newRoot;
         nextIndex = _nextIndex + 1;
+        console.log(_nextIndex);
         return _nextIndex;
     }
 

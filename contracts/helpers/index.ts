@@ -1,7 +1,6 @@
 import { Wallet } from "ethers";
 import { SimpleMerkleTree } from "../typechain-types";
 import hre, { ethers } from "hardhat";
-import { byteCode } from "./bytecode";
 import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
 import { Noir } from "@noir-lang/noir_js";
 import { CompiledCircuit } from "@noir-lang/types";

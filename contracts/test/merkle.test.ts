@@ -95,7 +95,7 @@ describe("Merkle Tree Test", function () {
     tree.updateLeaf(1, outputNoteHashes[0]);
     const outputRoot1 = "0x" + tree.getRoot().toString("hex");
 
-    tree.updateLeaf(2, outputNoteHashes[0]);
+    tree.updateLeaf(2, outputNoteHashes[1]);
     const outputRoot2 = "0x" + tree.getRoot().toString("hex");
 
     const nullifierHash = poseidon2Hash([0, alicePrivateKey, 50, btcAssetId]);
@@ -143,6 +143,7 @@ describe("Merkle Tree Test", function () {
       })),
     );
 
+    expect(await simpleMerkleTree.isKnownRoot(outputRoot1)).to.be.true;
     expect(await simpleMerkleTree.isKnownRoot(outputRoot2)).to.be.true;
 
     // check our proof is valid
