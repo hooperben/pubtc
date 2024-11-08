@@ -31,6 +31,7 @@ struct OutputNoteAmount {
     amount: Field,
     asset_id: Field,
     owner: Field,
+    pub externalAmount: Field,
 }
 
 fn main(
@@ -62,6 +63,10 @@ fn main(
     // check inputs == outputs
     let mut sum = 0;
     for i in 0..outputNotes.len() {
+        if (outputNotes[i].externalAmount as u64 > 0) {
+            assert(outputNotes[i].owner == 0, "invalid burn not");
+            assert(outputNotes[i].amount == outputNotes[i].externalAmount, "sneaky!");
+        }
         assert(outputNotes[i].asset_id == inputNote.asset_id, "Invalid asset id");
         sum = sum + outputNotes[i].amount;
     }
@@ -94,8 +99,40 @@ fn test_main() {
         poseidon2::Poseidon2::hash([inputNote.leafIndex, privateKey, 50, inputNote.asset_id], 4);
 
     let outputNotes = [
-        OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice },
-        OutputNoteAmount { amount: 40, asset_id: 69_57_420, owner: bob },
+        OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice, externalAmount: 0 },
+        OutputNoteAmount { amount: 40, asset_id: 69_57_420, owner: bob, externalAmount: 0 },
+    ];
+
+    main(privateKey, root, nullifier, inputNote, outputNotes);
+}
+
+#[test]
+fn test_external() {
+    let privateKey = 0x84cf1c96ee76f15cbfeb1e2eaf55413059e78b501728133facb4664277aa8b;
+    let alice = 0x20df6cb4768e57fd8e2404f04981b18c95fb4000e2288627c1c6594f8973ef6b;
+    let root = 0x1d7c9a8d7dac872b69f3dc62f019e07d08266cdd415aaf3a13c19f5fdead6c10;
+
+    let inputNote = InputNoteSpend {
+        address: alice,
+        amount: 50,
+        asset_id: 69_57_420,
+        leafIndex: 0,
+        path: [1, 1, 1, 1, 1],
+        path_data: [
+            0x0124e2a36fa18ec18993d7a281e8270ac93340ccf0785ab75e18cc3f4f74296c,
+            0x1c936490f40b64fcb00e7b92a9a3cf68933465ec4d0a2fb7f1442c82810b894d,
+            0x0bb7701b39c1ba621c04938017d07e70baeae094fbbf80606b978030ce78453e,
+            0x154d4ad9f6ec7b100aa165d72d5068613d2c3129bb19a54fff82850f8cf0a464,
+            0x010185aeae0f692bb0c289bed20658067d4cd55800d95b3a2d25d9696dc92d9a,
+        ],
+    };
+
+    let nullifier =
+        poseidon2::Poseidon2::hash([inputNote.leafIndex, privateKey, 50, inputNote.asset_id], 4);
+
+    let outputNotes = [
+        OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice, externalAmount: 0 },
+        OutputNoteAmount { amount: 40, asset_id: 69_57_420, owner: 0, externalAmount: 40 },
     ];
 
     main(privateKey, root, nullifier, inputNote, outputNotes);
