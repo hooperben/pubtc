@@ -4,6 +4,7 @@
   "devDependencies": {
     "@aztec/foundation": "^0.62.0",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.1.0",
     "@types/bun": "latest",
     "@types/circomlibjs": "^0.1.6",
     "circomlibjs": "^0.1.7",
