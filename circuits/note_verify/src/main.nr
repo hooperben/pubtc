@@ -90,10 +90,8 @@ fn test_main() {
         ],
     };
 
-    let nullifier = poseidon2::Poseidon2::hash(
-        [inputNote.leafIndex, privateKey, 50, inputNote.asset_id],
-        4,
-    );
+    let nullifier =
+        poseidon2::Poseidon2::hash([inputNote.leafIndex, privateKey, 50, inputNote.asset_id], 4);
 
     let outputNotes = [
         OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice },
