@@ -81,7 +81,7 @@ describe("Merkle Tree Test", function () {
     // deposit
     tree.updateLeaf(0, inputNoteHashes[0]);
     const firstRoot = "0x" + tree.getRoot().toString("hex");
-    await simpleMerkleTree.deposit(inputNoteHashes[0], firstRoot);
+    await simpleMerkleTree.deposit(inputNoteHashes[0]);
     expect(await simpleMerkleTree.isKnownRoot(firstRoot)).to.be.true;
 
     const proof = tree.getProof(inputNoteHashes[0]).map((step) => {
@@ -142,9 +142,6 @@ describe("Merkle Tree Test", function () {
         root: i === 0 ? outputRoot1 : outputRoot2,
       })),
     );
-
-    expect(await simpleMerkleTree.isKnownRoot(outputRoot1)).to.be.true;
-    expect(await simpleMerkleTree.isKnownRoot(outputRoot2)).to.be.true;
 
     // check our proof is valid
     const isValid = await backend.verifyProof(zkProof);

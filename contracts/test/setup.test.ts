@@ -2,13 +2,13 @@ import MerkleTree from "merkletreejs";
 import { loadPoseidon } from "../helpers";
 
 describe("Generating empty merkle tree", async () => {
-  it.only("merkle tree changes should track", async () => {
+  it("merkle tree changes should track", async () => {
     const poseidon2Hash = await loadPoseidon();
 
     const emptyNote = poseidon2Hash([BigInt(57_69_240)]).toString();
     const emptyNotes = Array(32).fill(emptyNote);
 
-    console.log(emptyNote);
+    // console.log(emptyNote); // 0x0124e2a36fa18ec18993d7a281e8270ac93340ccf0785ab75e18cc3f4f74296c
 
     const hasherFn = (input: string) => {
       const [left, right] = [
@@ -29,5 +29,6 @@ describe("Generating empty merkle tree", async () => {
     });
 
     console.log(tree.toString());
+    console.log("root: ", tree.getRoot().toString("hex"));
   });
 });
