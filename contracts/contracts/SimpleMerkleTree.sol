@@ -103,7 +103,6 @@ contract SimpleMerkleTree {
     }
     struct OutputNote {
         bytes32 leaf;
-        bytes32 root;
     }
 
     function transact(
