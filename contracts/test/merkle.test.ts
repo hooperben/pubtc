@@ -102,7 +102,6 @@ describe("Merkle Tree Test", function () {
 
     // transfer 40 to bob from alice
     tree.updateLeaf(1, outputNoteHashes[0]);
-    console.log("leaf hash: ", outputNoteHashes[0]);
     const outputRoot1 = "0x" + tree.getRoot().toString("hex");
 
     tree.updateLeaf(2, outputNoteHashes[1]);
@@ -130,8 +129,14 @@ describe("Merkle Tree Test", function () {
           amount: 10,
           asset_id: 69_57_420,
           owner: alicePosAddress.toString(16),
+          external_amount: 0,
         },
-        { amount: 40, asset_id: 69_57_420, owner: bobPosAddress.toString() },
+        {
+          amount: 40,
+          asset_id: 69_57_420,
+          owner: bobPosAddress.toString(),
+          external_amount: 0,
+        },
       ],
     };
 
@@ -198,12 +203,16 @@ describe("Merkle Tree Test", function () {
           amount: 1,
           asset_id: 69_57_420,
           owner: bobPosAddress.toString(16),
+          external_amount: 0,
         },
-        { amount: 9, asset_id: 69_57_420, owner: charliePosAddress.toString() },
+        {
+          amount: 9,
+          asset_id: 69_57_420,
+          owner: charliePosAddress.toString(),
+          external_amount: 0,
+        },
       ],
     };
-
-    console.log(b2CInput);
 
     // generate our zk proof
     const { witness: b2cWitness } = await noir.execute(b2CInput);
@@ -219,6 +228,7 @@ describe("Merkle Tree Test", function () {
       },
       outputNoteHashes.map((hash, i) => ({
         leaf: hash,
+        externalAmount: 0,
       })),
     );
   });
