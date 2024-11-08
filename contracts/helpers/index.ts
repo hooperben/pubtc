@@ -51,11 +51,14 @@ export const getTestingAPI = async () => {
   // expect(alice.privateKey).equal(BigInt(alice_private_key));
   // expect(bob.privateKey).equal(BigInt(bob_private_key));
 
+  const NoteVerifier = await hre.ethers.getContractFactory("UltraVerifier");
+  let verifier = await NoteVerifier.deploy();
+
   const SimpleMerkleTree = await hre.ethers.getContractFactory(
     "SimpleMerkleTree",
   );
 
-  simpleMerkleTree = await SimpleMerkleTree.deploy(5, byteCode);
+  simpleMerkleTree = await SimpleMerkleTree.deploy(5, verifier.target);
 
   return { simpleMerkleTree, alice, bob, noir, backend };
 };

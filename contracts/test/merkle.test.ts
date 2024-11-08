@@ -99,18 +99,6 @@ describe("Merkle Tree Test", function () {
     const outputRoot2 = "0x" + tree.getRoot().toString("hex");
 
     const nullifierHash = poseidon2Hash([0, alicePrivateKey, 50, btcAssetId]);
-    await simpleMerkleTree.transact(
-      {
-        nullifier: nullifierHash.toString(),
-        root: outputRoot1,
-      },
-      outputNoteHashes.map((hash, i) => ({
-        leaf: hash,
-        root: i === 0 ? outputRoot1 : outputRoot2,
-      })),
-    );
-
-    expect(await simpleMerkleTree.isKnownRoot(outputRoot2)).to.be.true;
 
     const paths = proof.map((x) => x.path);
     const values = proof.map((x) => "0x" + x.value);
@@ -140,6 +128,22 @@ describe("Merkle Tree Test", function () {
     // generate our zk proof
     const { witness } = await noir.execute(input);
     const zkProof = await backend.generateProof(witness);
+
+    // submit our transaction
+    await simpleMerkleTree.transact(
+      zkProof.proof,
+      zkProof.publicInputs,
+      {
+        nullifier: nullifierHash.toString(),
+        root: outputRoot1,
+      },
+      outputNoteHashes.map((hash, i) => ({
+        leaf: hash,
+        root: i === 0 ? outputRoot1 : outputRoot2,
+      })),
+    );
+
+    expect(await simpleMerkleTree.isKnownRoot(outputRoot2)).to.be.true;
 
     // check our proof is valid
     const isValid = await backend.verifyProof(zkProof);
