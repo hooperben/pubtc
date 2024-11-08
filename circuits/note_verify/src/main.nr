@@ -101,6 +101,4 @@ fn test_main() {
     ];
 
     main(privateKey, root, nullifier, inputNote, outputNotes);
-    // Uncomment to make test fail
-    // main(1, 1);
 }
