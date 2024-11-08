@@ -7,13 +7,6 @@ import "./verifiers/contract.sol";
 
 import "hardhat/console.sol";
 
-// interface UltraVerifier {
-//     function verify(
-//         bytes calldata _proof,
-//         bytes32[] calldata _publicInputs
-//     ) external view returns (bool);
-// }
-
 contract SimpleMerkleTree {
     using Field for *;
 
@@ -85,14 +78,31 @@ contract SimpleMerkleTree {
         return bytes32(test_hash);
     }
 
+    function compareHashes(
+        uint256 x,
+        uint256 y
+    ) public returns (bytes32, bytes32, uint256, uint256) {
+        // Measure gas for keccak256
+        uint256 startGas = gasleft();
+        bytes32 keccakHash = keccak256(abi.encodePacked(x, y));
+        uint256 keccakGas = startGas - gasleft();
+        console.log("Keccak gas used:", keccakGas);
+
+        // Measure gas for poseidon2
+        startGas = gasleft();
+        uint256 poseidonResult = poseidon2Hasher
+            .hash_2(uint256(x).toField(), uint256(y).toField())
+            .toUint256();
+        bytes32 poseidonHash = bytes32(poseidonResult);
+        uint256 poseidonGas = startGas - gasleft();
+        console.log("Poseidon gas used:", poseidonGas);
+
+        return (keccakHash, poseidonHash, keccakGas, poseidonGas);
+    }
+
     event LeafAdded(uint256 indexed leafIndex, bytes32 indexed leaf);
 
-    function deposit(
-        // bytes32 owner,
-        // uint256 amount,
-        // uint256 asset,
-        bytes32 leaf
-    ) public {
+    function deposit(bytes32 leaf) public payable virtual {
         uint256 index = _insert(leaf);
         emit LeafAdded(index, leaf);
     }
