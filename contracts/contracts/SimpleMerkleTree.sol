@@ -38,17 +38,6 @@ contract SimpleMerkleTree {
     uint32 public currentRootIndex = 0;
     uint32 public nextIndex = 0;
 
-    function deployFromBytecode(
-        bytes memory bytecode
-    ) public returns (address) {
-        address child;
-        assembly {
-            mstore(0x0, bytecode)
-            child := create(0, 0xa0, calldatasize())
-        }
-        return child;
-    }
-
     constructor(uint32 _levels, address _noteVerifier) {
         require(_levels > 0, "_levels should be greater than zero");
         require(_levels < 32, "_levels should be less than 32");
@@ -102,7 +91,7 @@ contract SimpleMerkleTree {
 
     event LeafAdded(uint256 indexed leafIndex, bytes32 indexed leaf);
 
-    function deposit(bytes32 leaf) public payable virtual {
+    function _deposit(bytes32 leaf) internal {
         uint256 index = _insert(leaf);
         emit LeafAdded(index, leaf);
     }
@@ -113,14 +102,15 @@ contract SimpleMerkleTree {
     }
     struct OutputNote {
         bytes32 leaf;
+        uint256 external_amount;
     }
 
-    function transact(
+    function _transact(
         bytes calldata _proof,
         bytes32[] calldata _publicInputs,
         InputNote calldata inputNote,
         OutputNote[] calldata outputNotes
-    ) public {
+    ) internal {
         require(!nullifierUsed[inputNote.nullifier], "Nullifier used");
 
         // run the proof here

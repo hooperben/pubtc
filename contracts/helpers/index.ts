@@ -1,5 +1,5 @@
 import { Wallet } from "ethers";
-import { SimpleMerkleTree } from "../typechain-types";
+import { PUBTC, SimpleMerkleTree } from "../typechain-types";
 import hre, { ethers } from "hardhat";
 import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
 import { Noir } from "@noir-lang/noir_js";
@@ -8,7 +8,7 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 
 export const getTestingAPI = async () => {
-  let simpleMerkleTree: SimpleMerkleTree;
+  let simpleMerkleTree: PUBTC;
 
   let alice: Wallet;
   let bob: Wallet;
@@ -62,9 +62,7 @@ export const getTestingAPI = async () => {
   const NoteVerifier = await hre.ethers.getContractFactory("UltraVerifier");
   let verifier = await NoteVerifier.deploy();
 
-  const SimpleMerkleTree = await hre.ethers.getContractFactory(
-    "SimpleMerkleTree",
-  );
+  const SimpleMerkleTree = await hre.ethers.getContractFactory("PUBTC");
 
   simpleMerkleTree = await SimpleMerkleTree.deploy(5, verifier.target);
 

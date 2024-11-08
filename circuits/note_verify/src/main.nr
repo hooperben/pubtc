@@ -31,7 +31,7 @@ struct OutputNoteAmount {
     amount: Field,
     asset_id: Field,
     owner: Field,
-    pub externalAmount: Field,
+    pub external_amount: Field,
 }
 
 fn main(
@@ -63,9 +63,9 @@ fn main(
     // check inputs == outputs
     let mut sum = 0;
     for i in 0..outputNotes.len() {
-        if (outputNotes[i].externalAmount as u64 > 0) {
+        if (outputNotes[i].external_amount as u64 > 0) {
             assert(outputNotes[i].owner == 0, "invalid burn not");
-            assert(outputNotes[i].amount == outputNotes[i].externalAmount, "sneaky!");
+            assert(outputNotes[i].amount == outputNotes[i].external_amount, "sneaky!");
         }
         assert(outputNotes[i].asset_id == inputNote.asset_id, "Invalid asset id");
         sum = sum + outputNotes[i].amount;
@@ -99,8 +99,8 @@ fn test_main() {
         poseidon2::Poseidon2::hash([inputNote.leafIndex, privateKey, 50, inputNote.asset_id], 4);
 
     let outputNotes = [
-        OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice, externalAmount: 0 },
-        OutputNoteAmount { amount: 40, asset_id: 69_57_420, owner: bob, externalAmount: 0 },
+        OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice, external_amount: 0 },
+        OutputNoteAmount { amount: 40, asset_id: 69_57_420, owner: bob, external_amount: 0 },
     ];
 
     main(privateKey, root, nullifier, inputNote, outputNotes);
@@ -131,8 +131,8 @@ fn test_external() {
         poseidon2::Poseidon2::hash([inputNote.leafIndex, privateKey, 50, inputNote.asset_id], 4);
 
     let outputNotes = [
-        OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice, externalAmount: 0 },
-        OutputNoteAmount { amount: 40, asset_id: 69_57_420, owner: 0, externalAmount: 40 },
+        OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice, external_amount: 0 },
+        OutputNoteAmount { amount: 40, asset_id: 69_57_420, owner: 0, external_amount: 40 },
     ];
 
     main(privateKey, root, nullifier, inputNote, outputNotes);

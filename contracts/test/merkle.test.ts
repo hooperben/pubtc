@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { SimpleMerkleTree } from "../typechain-types";
+import { PUBTC, SimpleMerkleTree } from "../typechain-types";
 import { Wallet } from "ethers";
 import { MerkleTree } from "merkletreejs";
 import { getTestingAPI, loadPoseidon } from "../helpers";
@@ -7,7 +7,7 @@ import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
 import { Noir } from "@noir-lang/noir_js";
 
 describe("Merkle Tree Test", function () {
-  let simpleMerkleTree: SimpleMerkleTree;
+  let simpleMerkleTree: PUBTC;
 
   let alice: Wallet;
   let bob: Wallet;
@@ -145,7 +145,7 @@ describe("Merkle Tree Test", function () {
     const zkProof = await backend.generateProof(witness);
 
     // submit our transaction
-    const firstTransaction = await simpleMerkleTree.transact(
+    const firstTransaction = await simpleMerkleTree.transfer(
       zkProof.proof,
       zkProof.publicInputs,
       {
@@ -154,6 +154,7 @@ describe("Merkle Tree Test", function () {
       },
       outputNoteHashes.map((hash, i) => ({
         leaf: hash,
+        external_amount: 0,
       })),
     );
 
@@ -219,7 +220,7 @@ describe("Merkle Tree Test", function () {
     const b2cZKProof = await backend.generateProof(b2cWitness);
 
     // submit our transaction
-    await simpleMerkleTree.transact(
+    await simpleMerkleTree.transfer(
       b2cZKProof.proof,
       b2cZKProof.publicInputs,
       {
@@ -228,7 +229,7 @@ describe("Merkle Tree Test", function () {
       },
       outputNoteHashes.map((hash, i) => ({
         leaf: hash,
-        externalAmount: 0,
+        external_amount: 0,
       })),
     );
   });

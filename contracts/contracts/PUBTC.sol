@@ -15,13 +15,34 @@ contract PUBTC is SimpleMerkleTree {
         address _noteVerifier
     ) SimpleMerkleTree(_levels, _noteVerifier) {}
 
-    function deposit(bytes32 leaf) public payable override {
-        super.deposit(leaf);
+    function deposit(bytes32 leaf) public payable {
+        _deposit(leaf);
     }
 
-    function withdraw(uint256 amount) public {
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Failed to send ETH");
+    function transfer(
+        bytes calldata _proof,
+        bytes32[] calldata _publicInputs,
+        InputNote calldata inputNote,
+        OutputNote[] calldata outputNotes
+    ) public {
+        _transact(_proof, _publicInputs, inputNote, outputNotes);
+    }
+
+    function withdraw(
+        bytes calldata _proof,
+        bytes32[] calldata _publicInputs,
+        InputNote calldata inputNote,
+        OutputNote[] calldata outputNotes,
+        address _withdrawalAddress // TODO this is front runnable
+    ) public {
+        _transact(_proof, _publicInputs, inputNote, outputNotes);
+
+        for (uint256 i; i < outputNotes.length; i++) {
+            (bool success, ) = payable(_withdrawalAddress).call{
+                value: outputNotes[0].external_amount
+            }("");
+            require(success, "Failed to send ETH");
+        }
     }
 
     receive() external payable {
