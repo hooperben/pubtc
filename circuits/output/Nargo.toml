@@ -1,8 +1,0 @@
-[package]
-name = "output"
-type = "bin"
-authors = [""]
-compiler_version = ">=0.36.0"
-
-[dependencies]
-pum = { path = "../../pum-lib" }
