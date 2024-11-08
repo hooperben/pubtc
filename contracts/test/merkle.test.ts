@@ -221,10 +221,10 @@ describe("Merkle Tree Test", function () {
         leaf: hash,
       })),
     );
+  });
 
-    // check our proof is valid
-    // const isValid = await backend.verifyProof(zkProof);
-    // expect(isValid).to.eq(true);
+  it("testing hash gas cost dif", async () => {
+    await simpleMerkleTree.compareHashes(12341241n, 12341241n);
   });
 
   it("poseidon sol test", async () => {
