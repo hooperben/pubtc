@@ -60,11 +60,14 @@ fn main(
     let merkle_root = compute_poseidon_merkle_root(leaf, inputNote.path, inputNote.path_data);
     assert(root == merkle_root, "invalid merkle proof");
 
+    // this is hacky but it'll do
+    let dead_value = 0x84cf1c96ee76f15cbfeb1e2eaf55413059e78b501728133facb4664277dead;
+
     // check inputs == outputs
     let mut sum = 0;
     for i in 0..outputNotes.len() {
         if (outputNotes[i].external_amount as u64 > 0) {
-            assert(outputNotes[i].owner == 0, "invalid burn not");
+            assert(outputNotes[i].owner == dead_value, "invalid burn not");
             assert(outputNotes[i].amount == outputNotes[i].external_amount, "sneaky!");
         }
         assert(outputNotes[i].asset_id == inputNote.asset_id, "Invalid asset id");
@@ -133,6 +136,38 @@ fn test_external() {
     let outputNotes = [
         OutputNoteAmount { amount: 10, asset_id: 69_57_420, owner: alice, external_amount: 0 },
         OutputNoteAmount { amount: 40, asset_id: 69_57_420, owner: 0, external_amount: 40 },
+    ];
+
+    main(privateKey, root, nullifier, inputNote, outputNotes);
+}
+
+#[test]
+fn test_breaking() {
+    let privateKey = 0x27dc51271d89e2fd27a7b799cc0c793a61f2d7c27e4926c39457531cf88b8361;
+    let charlie = 0x143c8e74ab6f831e23e87dd238780348f2fde024fcfc009dbb50cce00a5794f8;
+    let root = 0x291fbd33cd8f855d44fa10ccc9acf28b58079e88cdbf3fd35bf04bf4dd34ef1d;
+
+    let inputNote = InputNoteSpend {
+        address: charlie,
+        amount: 9,
+        asset_id: 69_57_420,
+        leafIndex: 4,
+        path: [1, 1, 0, 1, 1],
+        path_data: [
+            0x0124e2a36fa18ec18993d7a281e8270ac93340ccf0785ab75e18cc3f4f74296c,
+            0x1c936490f40b64fcb00e7b92a9a3cf68933465ec4d0a2fb7f1442c82810b894d,
+            0x2df5af75d78b2a2d51ed07eeb2698ab2daa772d49cecbd7bc0a5b945dd4805af,
+            0x154d4ad9f6ec7b100aa165d72d5068613d2c3129bb19a54fff82850f8cf0a464,
+            0x010185aeae0f692bb0c289bed20658067d4cd55800d95b3a2d25d9696dc92d9a,
+        ],
+    };
+
+    let nullifier =
+        poseidon2::Poseidon2::hash([inputNote.leafIndex, privateKey, 9, inputNote.asset_id], 4);
+
+    let outputNotes = [
+        OutputNoteAmount { amount: 5, asset_id: 69_57_420, owner: 0, external_amount: 5 },
+        OutputNoteAmount { amount: 4, asset_id: 69_57_420, owner: charlie, external_amount: 0 },
     ];
 
     main(privateKey, root, nullifier, inputNote, outputNotes);

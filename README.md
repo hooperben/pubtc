@@ -1,25 +1,27 @@
 # citrea-hackerhouse
 
-Current plan is:
+This repository contains my project for the Citrea Origins Hacker House, PUBTC (Private, Unstoppable Bitcoin).
 
-- `circuits/` core circuits to generate private transfers
-- `pum-lib/` contains all helper functions used in this library
+This was a research experiment to investigate the complexity of a system that would enable private transfers of a token.
 
-### `circuits`
+# project structure
 
-circuits contains the core circuits required for the roman kyoto MASP.
+### `circuits/`
 
-- `sig_verify` is the signature verification circuit
+Contains the note_verify circuit that powers this sorcery. This is a noir circuit, that complies to a solidity verifier contract.
 
-### `pum-lib`
+### `contracts`
 
-Pum lib is ideally meant to be a component library that contains all core logic
+Contains `PUBTC.sol` - a private, wrapped bitcoin token implementation.
 
-```
+### Getting things working
 
-bb write_vk -b ./target/<noir_artifact_name>.json
+To build our solidity verifier contract:
 
+```bash
+nargo compile
 bb write_vk -b ./target/note_verify.json
+bb contract
 
 
 ```

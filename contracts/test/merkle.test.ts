@@ -28,7 +28,7 @@ describe("Merkle Tree Test", function () {
     expect(aliceBal).equal(10000000000000000000n);
   });
 
-  it("merkle tree changes should track", async () => {
+  it.only("merkle tree changes should track", async () => {
     const emptyNote = poseidon2Hash([BigInt(57_69_240)]).toString();
     const emptyNotes = Array(32).fill(emptyNote);
     const noteHashes = emptyNotes;
@@ -90,7 +90,7 @@ describe("Merkle Tree Test", function () {
     // deposit
     tree.updateLeaf(0, inputNoteHashes[0]);
     const firstRoot = "0x" + tree.getRoot().toString("hex");
-    await simpleMerkleTree.deposit(inputNoteHashes[0]);
+    await simpleMerkleTree.deposit(inputNoteHashes[0], { value: 50n });
     expect(await simpleMerkleTree.isKnownRoot(firstRoot)).to.be.true;
 
     const proof = tree.getProof(inputNoteHashes[0]).map((step) => {
@@ -104,7 +104,6 @@ describe("Merkle Tree Test", function () {
     tree.updateLeaf(1, outputNoteHashes[0]);
     const outputRoot1 = "0x" + tree.getRoot().toString("hex");
 
-    tree.updateLeaf(2, outputNoteHashes[1]);
     const outputRoot2 = "0x" + tree.getRoot().toString("hex");
 
     const nullifierHash = poseidon2Hash([0, alicePrivateKey, 50, btcAssetId]);
@@ -227,10 +226,108 @@ describe("Merkle Tree Test", function () {
         nullifier: b2cNullifierHash.toString(),
         root: b2c2NoteRoot,
       },
-      outputNoteHashes.map((hash, i) => ({
+      b2cOutputNoteHashes.map((hash, i) => ({
         leaf: hash,
         external_amount: 0,
       })),
+    );
+
+    tree.updateLeaf(3, b2cOutputNoteHashes[0]);
+    tree.updateLeaf(4, b2cOutputNoteHashes[1]); // charlie
+
+    console.log("charlie using note:", b2cOutputNoteHashes[1]);
+
+    const withdrawalNullifierHash = poseidon2Hash([
+      4,
+      charliePrivateKey,
+      9n,
+      btcAssetId,
+    ]);
+
+    const withdrawalProof = tree
+      .getProof(b2cOutputNoteHashes[1])
+      .map((step) => {
+        return {
+          path: step.position === "right" ? 1 : 0,
+          value: step.data.toString("hex"),
+        };
+      });
+
+    const withdrawalPaths = withdrawalProof.map((x) => x.path);
+    const withdrawalValues = withdrawalProof.map((x) => "0x" + x.value);
+    const withdrawalRoot = "0x" + tree.getRoot().toString("hex");
+
+    const withdrawalOutputNotes = [
+      {
+        amount: 5,
+        asset_id: 6957420,
+        owner: 0n,
+        external_amount: 5,
+      },
+      {
+        amount: 4,
+        asset_id: 6957420,
+        owner: charliePosAddress.toString(),
+        external_amount: 0,
+      },
+    ];
+
+    const withdrawalOutputNoteHashes = withdrawalOutputNotes.map((note) =>
+      poseidon2Hash([
+        BigInt(note.owner),
+        note.amount,
+        note.asset_id,
+      ]).toString(),
+    );
+
+    // charlie is going to be withdrawing
+    const withdrawalInput = {
+      privateKey: "0x" + charliePrivateKey.toString(16), // Changed privateKey to private_key
+      root: withdrawalRoot,
+      nullifier: withdrawalNullifierHash.toString(16),
+      inputNote: {
+        address: charliePosAddress.toString(16),
+        amount: 9,
+        asset_id: 6957420,
+        leafIndex: 4,
+        path: withdrawalPaths,
+        path_data: withdrawalValues,
+      },
+      outputNotes: [
+        {
+          amount: 5,
+          asset_id: 6957420,
+          owner:
+            "0x84cf1c96ee76f15cbfeb1e2eaf55413059e78b501728133facb4664277dead",
+          external_amount: 5,
+        },
+        {
+          amount: 4,
+          asset_id: 6957420,
+          owner: charliePosAddress.toString(),
+          external_amount: 0,
+        },
+      ],
+    };
+
+    console.log(withdrawalInput);
+
+    // generate our zk proof
+    const { witness: withdrawalWitness } = await noir.execute(withdrawalInput);
+    const withdrawalZKProof = await backend.generateProof(withdrawalWitness);
+
+    await simpleMerkleTree.withdraw(
+      withdrawalZKProof.proof,
+      withdrawalZKProof.publicInputs,
+      {
+        nullifier: withdrawalNullifierHash.toString(),
+        root: withdrawalRoot,
+      },
+      withdrawalOutputNoteHashes.map((hash, i) => ({
+        leaf: hash,
+        external_amount: i === 0 ? 5 : 0,
+      })),
+      charlie.address,
     );
   });
 
