@@ -11,6 +11,7 @@ describe("Merkle Tree Test", function () {
 
   let alice: Wallet;
   let bob: Wallet;
+  let charlie: Wallet;
 
   let poseidon2Hash: any;
 
@@ -18,7 +19,8 @@ describe("Merkle Tree Test", function () {
   let backend: BarretenbergBackend;
 
   before(async () => {
-    ({ alice, bob, simpleMerkleTree, noir, backend } = await getTestingAPI());
+    ({ alice, bob, charlie, simpleMerkleTree, noir, backend } =
+      await getTestingAPI());
 
     poseidon2Hash = await loadPoseidon();
 
@@ -58,10 +60,15 @@ describe("Merkle Tree Test", function () {
       21888242871839275222246405745257275088548364400416034343698204186575808495617n;
     const alicePosAddress = poseidon2Hash([alicePrivateKey]);
 
-    const bobPosAddress = poseidon2Hash([
+    const bobPrivateKey =
       BigInt(bob.privateKey) %
-        21888242871839275222246405745257275088548364400416034343698204186575808495617n,
-    ]);
+      21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+    const bobPosAddress = poseidon2Hash([bobPrivateKey]);
+
+    const charliePrivateKey =
+      BigInt(charlie.privateKey) %
+      21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+    const charliePosAddress = poseidon2Hash([bobPrivateKey]);
 
     const btcAssetId = 69_57_420n;
     const inputNotes = [[alicePosAddress, 50n, btcAssetId]];
@@ -142,6 +149,8 @@ describe("Merkle Tree Test", function () {
         root: i === 0 ? outputRoot1 : outputRoot2,
       })),
     );
+
+    // now, as Bob we should able to send 40 BTC to Charlie
 
     // check our proof is valid
     const isValid = await backend.verifyProof(zkProof);

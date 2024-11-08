@@ -12,6 +12,7 @@ export const getTestingAPI = async () => {
 
   let alice: Wallet;
   let bob: Wallet;
+  let charlie: Wallet;
 
   let noir: Noir;
   let backend: BarretenbergBackend;
@@ -32,9 +33,12 @@ export const getTestingAPI = async () => {
     "0x91b1ba753a83576e85b0bc41b3335e58a8f5a064bd4379c70b5295221277aa8e";
   const bob_private_key =
     "0x04b84dc399d3384bc4b7d5e88567160a897e0cd1bb382713c4db0f4a95d1825f";
+  const charlie_private_key =
+    "0x58409f99febb8326dff7fd504d8dd1978a26c00af8029754d83948b0e88b8362";
 
   alice = new ethers.Wallet(alice_private_key, hre.ethers.provider);
   bob = new ethers.Wallet(bob_private_key, hre.ethers.provider);
+  charlie = new ethers.Wallet(charlie_private_key, hre.ethers.provider);
 
   // Fund alice and bob with 10 ETH each
   await funder.sendTransaction({
@@ -44,6 +48,11 @@ export const getTestingAPI = async () => {
 
   await funder.sendTransaction({
     to: bob.address,
+    value: ethers.parseEther("10.0"),
+  });
+
+  await funder.sendTransaction({
+    to: charlie.address,
     value: ethers.parseEther("10.0"),
   });
 
@@ -59,7 +68,7 @@ export const getTestingAPI = async () => {
 
   simpleMerkleTree = await SimpleMerkleTree.deploy(5, verifier.target);
 
-  return { simpleMerkleTree, alice, bob, noir, backend };
+  return { simpleMerkleTree, alice, bob, charlie, noir, backend };
 };
 
 export const loadPoseidon = async () => {

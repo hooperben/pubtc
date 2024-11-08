@@ -91,10 +91,9 @@ contract SimpleMerkleTree {
         // bytes32 owner,
         // uint256 amount,
         // uint256 asset,
-        bytes32 leaf,
-        bytes32 newRoot
+        bytes32 leaf
     ) public {
-        uint256 index = _insert(leaf, newRoot);
+        uint256 index = _insert(leaf);
         emit LeafAdded(index, leaf);
     }
 
@@ -120,25 +119,78 @@ contract SimpleMerkleTree {
 
         for (uint256 i = 0; i < outputNotes.length; i++) {
             // we need to verify this root
-            uint256 index = _insert(outputNotes[i].leaf, outputNotes[i].root);
+            uint256 index = _insert(outputNotes[i].leaf);
             emit LeafAdded(index, outputNotes[i].leaf);
         }
         nullifierUsed[inputNote.nullifier];
     }
 
-    function _insert(
-        bytes32,
-        bytes32 _newRoot
-    ) internal returns (uint32 index) {
-        uint32 _nextIndex = nextIndex;
-        require(_nextIndex != uint32(2) ** levels, "Merkle tree is full");
+    function zeros(uint256 i) public pure returns (bytes32) {
+        if (i == 4) {
+            return
+                bytes32(
+                    0x010185aeae0f692bb0c289bed20658067d4cd55800d95b3a2d25d9696dc92d9a
+                );
+        }
+        if (i == 3) {
+            return
+                bytes32(
+                    0x154d4ad9f6ec7b100aa165d72d5068613d2c3129bb19a54fff82850f8cf0a464
+                );
+        }
+        if (i == 2) {
+            return
+                bytes32(
+                    0x0bb7701b39c1ba621c04938017d07e70baeae094fbbf80606b978030ce78453e
+                );
+        }
+        if (i == 1) {
+            return
+                bytes32(
+                    0x1c936490f40b64fcb00e7b92a9a3cf68933465ec4d0a2fb7f1442c82810b894d
+                );
+        }
+        if (i == 0) {
+            return
+                bytes32(
+                    0x0124e2a36fa18ec18993d7a281e8270ac93340ccf0785ab75e18cc3f4f74296c
+                );
+        }
+
+        return bytes32(0);
+    }
+
+    function _insert(bytes32 leaf) internal returns (uint32 index) {
+        uint32 current_index = nextIndex;
+        require(current_index != 2 ** (levels - 1), "Merkle tree is full");
+
+        bytes32 current_level_hash = leaf;
+        bytes32 left;
+        bytes32 right;
+
+        for (uint256 i = 0; i < levels; i++) {
+            if (current_index % 2 == 0) {
+                left = current_level_hash;
+                right = zeros(i);
+
+                filledSubtrees[i] = current_level_hash;
+            } else {
+                left = filledSubtrees[i];
+                right = current_level_hash;
+            }
+
+            current_level_hash = hashLeftRight(left, right);
+
+            current_index /= 2;
+        }
 
         uint32 newRootIndex = (currentRootIndex + 1) % ROOT_HISTORY_SIZE;
         currentRootIndex = newRootIndex;
-        roots[newRootIndex] = _newRoot;
-        nextIndex = _nextIndex + 1;
-        console.log(_nextIndex);
-        return _nextIndex;
+        roots[newRootIndex] = current_level_hash;
+        nextIndex = current_index + 1;
+        console.log(nextIndex);
+        console.logBytes32(current_level_hash);
+        return nextIndex;
     }
 
     function hashLeftRight(
