@@ -56,9 +56,6 @@ export const getTestingAPI = async () => {
     value: ethers.parseEther("10.0"),
   });
 
-  // expect(alice.privateKey).equal(BigInt(alice_private_key));
-  // expect(bob.privateKey).equal(BigInt(bob_private_key));
-
   const NoteVerifier = await hre.ethers.getContractFactory("UltraVerifier");
   let verifier = await NoteVerifier.deploy();
 
@@ -66,7 +63,11 @@ export const getTestingAPI = async () => {
 
   simpleMerkleTree = await SimpleMerkleTree.deploy(5, verifier.target);
 
-  return { simpleMerkleTree, alice, bob, charlie, noir, backend };
+  const PUBTCKFactory = await hre.ethers.getContractFactory("PUBTCK");
+
+  const PUBTCK = await PUBTCKFactory.deploy(5, verifier.target);
+
+  return { simpleMerkleTree, PUBTCK, alice, bob, charlie, noir, backend };
 };
 
 export const loadPoseidon = async () => {
