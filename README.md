@@ -4,7 +4,7 @@ This repository contains my project for the Citrea Origins Hacker House, PUBTC (
 
 This was a research experiment to investigate the complexity of a system that would enable private transfers of a token balance on a public computer.
 
-Projects like this already exist, like railgun, but I wanted to see if I could build it in Noir (railgun has its circuits written in circom).
+Projects like this already exist, like railgun and roman kyoto (what this is based on), but I wanted to see if I could build it in Noir (railgun has its circuits written in circom).
 
 TLDR I thought it'd be easier than it was lol, and originally wanted to ship this with a report on how a protocol like this could implement compliance checks with differing levels of decentralisation, but that'll come later.
 
