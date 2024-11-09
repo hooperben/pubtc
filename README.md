@@ -28,6 +28,8 @@ bb write_vk -b ./target/note_verify.json
 bb contract
 ```
 
+copy the `circuits/note_verify/circuits/contract.sol` to `contracts/verifiers/contract.sol`.
+
 To run tests:
 
 ```
@@ -39,27 +41,27 @@ bun hardhat test
 
 On Citrea testnet, I was able to deposit 69,420 satoshis to the pool as alice:
 
-0x1e0b2ce6c51719da77d7de0ac3affe1f7aa6c6965d3649482e2780b4ed3f7354
+https://explorer.testnet.citrea.xyz/tx/0x1e0b2ce6c51719da77d7de0ac3affe1f7aa6c6965d3649482e2780b4ed3f7354
 
 Then, as Alice, I was able to privately send bob 420 satoshis:
 
-0xa2be50896b04796c399afa5c7f81add235a71efa6fd380f8888993263fda3199
+https://explorer.testnet.citrea.xyz/tx/0xa2be50896b04796c399afa5c7f81add235a71efa6fd380f8888993263fda3199
 
 Then, Bob was able to privately send Charlie 69 satoshis:
 
-0x07eb03003c27e75c54ca9683fa7e618f0a5612f1fb5a49498482a0d338627128
+https://explorer.testnet.citrea.xyz/tx/0x07eb03003c27e75c54ca9683fa7e618f0a5612f1fb5a49498482a0d338627128
 
 Then, Charlie was able to withdraw 24 satoshis to their address:
 
-0xa94dcd2895814982761142f46c55fcad12098bbc75c7c1de009858855248008d
+https://explorer.testnet.citrea.xyz/tx/0xa94dcd2895814982761142f46c55fcad12098bbc75c7c1de009858855248008d
 
 ### Active Problems / Optimisations
 
 - Need to sum and check public inputs in solidity for withdrawals
-- I am pretty sure there's a critical vulnerability in the withdrawal function lol
-- If I can migrate the zk from using a poseidon hash to using a keccak hash, it will make transfers/withdraws 75% cheaper
+- If I can migrate the zk from using a poseidon hash to using a keccak hash, it will make transfers/withdraws 75% cheaper in the EVM
 - I need to bake the withdrawal address into the proof to avoid front running
 - Need to make it so transfer/withdrawal can take multiple input notes
+- add `useBureaucracy()` hook
 
 # Disclaimers
 
