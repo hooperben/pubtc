@@ -53,8 +53,9 @@ Then, Charlie was able to withdraw 24 satoshis to their address:
 
 0xa94dcd2895814982761142f46c55fcad12098bbc75c7c1de009858855248008d
 
-### Problems / Optimisations
+### Active Problems / Optimisations
 
+- Need to sum and check public inputs in solidity for withdrawals
 - I am pretty sure there's a critical vulnerability in the withdrawal function lol
 - If I can migrate the zk from using a poseidon hash to using a keccak hash, it will make transfers/withdraws 75% cheaper
 - I need to bake the withdrawal address into the proof to avoid front running
