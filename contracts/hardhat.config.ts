@@ -6,7 +6,7 @@ import "dotenv/config";
 
 const config: HardhatUserConfig = {
   networks: {
-    citreaDevnet: {
+    citreaTestnet: {
       url: "https://rpc.testnet.citrea.xyz",
       accounts: [process.env.PRIVATE_KEY!],
     },
