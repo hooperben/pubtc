@@ -8,6 +8,10 @@ Projects like this already exist, like railgun, but I wanted to see if I could b
 
 TLDR I thought it'd be easier than it was lol, and originally wanted to ship this with a report on how a protocol like this could implement compliance checks with differing levels of decentralisation, but that'll come later.
 
+I've better documented the data structures at play in this presentation:
+
+https://docs.google.com/presentation/d/1xvbygNVBei91_tnhPpN-txfTU43KPVPc51BcULWMqHY/edit?usp=sharing
+
 # project structure
 
 ### `circuits/`
