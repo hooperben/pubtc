@@ -1,4 +1,4 @@
-# citrea-hackerhouse
+# PUBTC
 
 This repository contains my project for the Citrea Origins Hacker House, PUBTC (Private, Unstoppable Bitcoin).
 
