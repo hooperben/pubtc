@@ -28,7 +28,7 @@ describe("Merkle Tree Test", function () {
     expect(aliceBal).equal(10000000000000000000n);
   });
 
-  it.only("merkle tree changes should track", async () => {
+  it("merkle tree changes should track", async () => {
     const emptyNote = poseidon2Hash([BigInt(57_69_240)]).toString();
     const emptyNotes = Array(32).fill(emptyNote);
     const noteHashes = emptyNotes;
@@ -235,8 +235,6 @@ describe("Merkle Tree Test", function () {
     tree.updateLeaf(3, b2cOutputNoteHashes[0]);
     tree.updateLeaf(4, b2cOutputNoteHashes[1]); // charlie
 
-    console.log("charlie using note:", b2cOutputNoteHashes[1]);
-
     const withdrawalNullifierHash = poseidon2Hash([
       4,
       charliePrivateKey,
@@ -309,8 +307,6 @@ describe("Merkle Tree Test", function () {
         },
       ],
     };
-
-    console.log(withdrawalInput);
 
     // generate our zk proof
     const { witness: withdrawalWitness } = await noir.execute(withdrawalInput);
