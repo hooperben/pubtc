@@ -116,12 +116,14 @@ contract SimpleMerkleTree {
         // run the proof here
         verifyProof(_proof, _publicInputs);
 
+        // mark this proof as used
+        nullifierUsed[inputNote.nullifier] = true;
+
         for (uint256 i = 0; i < outputNotes.length; i++) {
             // we need to verify this root
             uint256 index = _insert(outputNotes[i].leaf);
             emit LeafAdded(index, outputNotes[i].leaf);
         }
-        nullifierUsed[inputNote.nullifier];
     }
 
     function zeros(uint256 i) public pure returns (bytes32) {

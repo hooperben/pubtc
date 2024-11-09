@@ -37,6 +37,8 @@ contract PUBTC is SimpleMerkleTree {
     ) public {
         _transact(_proof, _publicInputs, inputNote, outputNotes);
 
+        // TODO need to check output note external amount sum == public inputs sum amount
+
         for (uint256 i; i < outputNotes.length; i++) {
             (bool success, ) = payable(_withdrawalAddress).call{
                 value: outputNotes[0].external_amount
