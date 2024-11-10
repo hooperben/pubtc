@@ -20,7 +20,7 @@ Contains the note_verify circuit that powers this sorcery. This is a noir circui
 
 ### `contracts`
 
-Contains `PUBTC.sol` - a private, wrapped bitcoin token implementation.
+Contains `PUBTC.sol` - a private, wrapped bitcoin token implementation. This deployment calls a verifier function generated from the circuits/ directory. 
 
 ### Getting things working
 
