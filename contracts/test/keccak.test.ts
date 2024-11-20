@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { PUBTC, SimpleMerkleTree, PUBTCK } from "../typechain-types";
-import { keccak256, Wallet } from "ethers";
+import { keccak256, toUtf8Bytes, Wallet } from "ethers";
 import { MerkleTree } from "merkletreejs";
 import { getTestingAPI, loadPoseidon } from "../helpers";
 import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
@@ -21,7 +21,21 @@ describe("Merkle Tree Test", function () {
   before(async () => {
     ({ alice, bob, charlie, PUBTCK, noir, backend } = await getTestingAPI());
 
-    const aliceBal = await alice.provider?.getBalance(alice.address);
-    expect(aliceBal).equal(10000000000000000000n);
+    const emptyNote = keccak256(toUtf8Bytes("PRIVATE_UNSTOPPABLE_BITCOIN"));
+    const emptyNotes = Array(32).fill(emptyNote); // 2^5 == 32 (our tree has 5 layers)
+
+    const tree = new MerkleTree(emptyNotes, keccak256, {
+      sort: false,
+      complete: true,
+    });
+
+    const proof = tree.getProof(emptyNote).map((step) => {
+      return {
+        path: step.position === "right" ? 1 : 0,
+        value: Uint8Array.from(Buffer.from(step.data.toString("hex"), "hex")),
+      };
+    });
   });
+
+  it.only("should print the correct tree", async () => {});
 });

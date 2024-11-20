@@ -19,7 +19,7 @@ export const getTestingAPI = async () => {
 
   // next we initialise our Noir libraries to generate proofs
   const circuitFile = readFileSync(
-    resolve("../circuits/note_verify/target/note_verify.json"),
+    resolve("../circuits/poseidon/note_verify/target/note_verify.json"),
     "utf-8",
   );
   const circuit = JSON.parse(circuitFile);
