@@ -1,3 +1,5 @@
+use std::{hash::{poseidon2::Poseidon2Hasher, BuildHasherDefault}, collections::map::HashMap};
+
 pub fn concatenate_bytes32_arrays(arr1: [u8; 32], arr2: [u8; 32]) -> [u8; 64] {
     let mut result = [08; 64];
     for i in 0..32 {
@@ -77,7 +79,9 @@ fn u8_array_to_u32(array: [u8; 5]) -> u32 {
     value
 }
 
+
 struct InputNoteSpend {
+    private_key: [u8; 32],
     leaf_index: [u8; 8],
     path: [Field; 5],
     path_data: [[u8; 32]; 5],
@@ -88,63 +92,94 @@ struct InputNoteSpend {
 }
 
 struct OutputNoteAmount {
-    amount: u32, // largest value is 2^(8*5) - 1 = 1,099,511,627,775
+    amount: u32,
     asset_id: [u8; 8],
     owner: Field,
 }
 
+global MAX_NOTES_AMOUNT = 5;
+
 fn main(
-    private_key: [u8; 32],
     root: pub [u8; 32],
-    input_notes: [InputNoteSpend; 1],
-    output_notes: [OutputNoteAmount; 2],
-    external_amounts: pub [u32; 2],
+    input_notes: [InputNoteSpend; MAX_NOTES_AMOUNT],
+    output_notes: [OutputNoteAmount; MAX_NOTES_AMOUNT],
+    external_amounts: pub [u32; MAX_NOTES_AMOUNT], // this has to be outside output note array as pub fields can't be nested in private struct - MUST be in same order as output_notes
 ) {
-    let senderPubKey = std::hash::keccak256(private_key, 32);
-
-    let mut sum_inputs: u32 = 0;
-
-    for i in 0..input_notes.len() {
-        assert(senderPubKey == input_notes[i].address, "invalid spender");
-
-        // TODO support multiple asset sum tracking
-        sum_inputs = sum_inputs + u8_array_to_u32(input_notes[i].amount);
-
-        let reconstructed_nullifier = calculate_nullifier(
-            input_notes[i].leaf_index,
-            input_notes[i].address,
-            input_notes[i].amount,
-            input_notes[i].asset_id,
-        );
-
-        assert(input_notes[i].nullifier == reconstructed_nullifier, "Invalid nullifier");
-
-        let note_leaf = calculate_leaf(
-            input_notes[i].address,
-            input_notes[i].amount,
-            input_notes[i].asset_id,
-        );
-
-        let merkle_root =
-            compute_keccak_merkle_hash(note_leaf, input_notes[i].path, input_notes[i].path_data);
-
-        assert(root == merkle_root, "Invalid merkle proof");
-    }
-
-    let mut sum_outputs: u32 = 0;
-
     let DEAD_OWNER = 0xdeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead;
 
-    for i in 0..output_notes.len() {
-        // if there's external amount, ensure output note recipient is burn address
-        if (external_amounts[i] as u64 > 0) {
-            assert(output_notes[i].owner == DEAD_OWNER, "Invalid burn note");
-            assert(output_notes[i].amount == external_amounts[i], "Ahh the sneaky edge case eh");
+    let mut inputs_map: HashMap<[u8; 8], u32, 10, BuildHasherDefault<Poseidon2Hasher>> =
+        HashMap::default();
+
+    let mut outputs_map: HashMap<[u8; 8], u32, 10, BuildHasherDefault<Poseidon2Hasher>> =
+        HashMap::default();
+
+    for i in 0..input_notes.len() {
+        // given that we have 10 inputs, some can be empty
+        if input_notes[i].amount != [0, 0, 0, 0, 0] {
+            let senderPubKey = std::hash::keccak256(input_notes[i].private_key, 32);
+            assert(senderPubKey == input_notes[i].address, "invalid spender");
+
+            inputs_map.insert(input_notes[i].asset_id, u8_array_to_u32(input_notes[i].amount));
+
+            let reconstructed_nullifier = calculate_nullifier(
+                input_notes[i].leaf_index,
+                input_notes[i].address,
+                input_notes[i].amount,
+                input_notes[i].asset_id,
+            );
+
+            assert(input_notes[i].nullifier == reconstructed_nullifier, "Invalid nullifier");
+
+            let note_leaf = calculate_leaf(
+                input_notes[i].address,
+                input_notes[i].amount,
+                input_notes[i].asset_id,
+            );
+
+            let merkle_root = compute_keccak_merkle_hash(
+                note_leaf,
+                input_notes[i].path,
+                input_notes[i].path_data,
+            );
+
+            assert(root == merkle_root, "Invalid merkle proof");
+
+            inputs_map.insert(
+                input_notes[i].asset_id,
+                inputs_map.get(input_notes[i].asset_id).unwrap_unchecked()
+                    + output_notes[i].amount,
+            );
         }
-        sum_outputs = sum_outputs + output_notes[i].amount;
     }
 
-    assert(sum_inputs == sum_outputs, "Not valid sorry compadre");
+    for i in 0..output_notes.len() {
+        // given that we have 10 outputs, some can be empty
+        if output_notes[i].amount != 0 {
+            // if there's external amount, ensure output note recipient is burn address
+            if (external_amounts[i] as u64 > 0) {
+                assert(output_notes[i].owner == DEAD_OWNER, "Invalid burn note");
+                assert(
+                    output_notes[i].amount == external_amounts[i],
+                    "Ahh the sneaky edge case eh",
+                );
+            }
+            outputs_map.insert(
+                output_notes[i].asset_id,
+                outputs_map.get(output_notes[i].asset_id).unwrap_unchecked()
+                    + output_notes[i].amount,
+            );
+        }
+    }
+
+    // check that tracked summed inputs == tracked summed outputs
+    assert(inputs_map.len() == outputs_map.len());
+
+    // check that sum of inputs == outputs
+    for i in 0..input_notes.len() {
+        assert(
+            inputs_map.get(input_notes[i].asset_id) == outputs_map.get(output_notes[i].asset_id),
+        );
+    }
 }
 
 #[test]
