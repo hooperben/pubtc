@@ -11,16 +11,16 @@ pub fn concatenate_bytes32_arrays(arr1: [u8; 32], arr2: [u8; 32]) -> [u8; 64] {
 
 pub fn compute_keccak_merkle_hash<let N: u32>(
     leaf: [u8; 32],
-    path_indices: [Field; N],
-    hash_path: [[u8; 32]; N],
+    path: [Field; N],
+    path_data: [[u8; 32]; N],
 ) -> [u8; 32] {
     let mut current = leaf;
     for i in 0..N {
-        let path_bit = path_indices[i];
+        let path_bit = path[i];
         let (hash_left, hash_right) = if path_bit == 0 {
-            (hash_path[i], current)
+            (path_data[i], current)
         } else {
-            (current, hash_path[i])
+            (current, path_data[i])
         };
         let concat = concatenate_bytes32_arrays(hash_left, hash_right);
         current = std::hash::keccak256(concat, concat.len());
@@ -28,17 +28,17 @@ pub fn compute_keccak_merkle_hash<let N: u32>(
     current
 }
 
-pub fn calculate_leaf(address: [u8; 32], amount: [u8; 32], asset_id: [u8; 8]) -> [u8; 32] {
+pub fn calculate_leaf(address: [u8; 32], amount: [u8; 5], asset_id: [u8; 8]) -> [u8; 32] {
     // need to combine into one giga array
     let mut concat_values = [0; 72];
     for i in 0..32 {
         concat_values[i] = address[i];
     }
-    for i in 0..32 {
+    for i in 0..5 {
         concat_values[i + 32] = amount[i];
     }
     for i in 0..8 {
-        concat_values[i + 64] = asset_id[i];
+        concat_values[i + 37] = asset_id[i];
     }
 
     let current = std::hash::keccak256(concat_values, 72);
@@ -49,7 +49,7 @@ pub fn calculate_leaf(address: [u8; 32], amount: [u8; 32], asset_id: [u8; 8]) ->
 pub fn calculate_nullifier(
     leaf_index: [u8; 8], // TODO investigate length
     address: [u8; 32],
-    amount: [u8; 32],
+    amount: [u8; 5],
     asset_id: [u8; 8],
 ) -> [u8; 32] {
     let mut concat_values = [0; 80];
@@ -59,59 +59,56 @@ pub fn calculate_nullifier(
     for i in 0..32 {
         concat_values[i + 8] = address[i];
     }
-    for i in 0..32 {
+    for i in 0..5 {
         concat_values[i + 40] = amount[i];
     }
     for i in 0..8 {
-        concat_values[i + 72] = asset_id[i];
+        concat_values[i + 45] = asset_id[i];
     }
 
-    std::hash::keccak256(concat_values, 80)
+    std::hash::keccak256(concat_values, 53)
+}
+
+fn u8_array_to_u32(array: [u8; 5]) -> u32 {
+    let mut value: u32 = 0;
+    for i in 0..4 {
+        value |= (array[i] as u32) << (i * 8);
+    }
+    value
 }
 
 struct InputNoteSpend {
     leaf_index: [u8; 8],
     path: [Field; 5],
-    path_data: [Field; 5],
+    path_data: [[u8; 32]; 5],
     address: [u8; 32],
-    amount: [u8; 32],
+    amount: [u8; 5], // largest value is 2^(8*5) - 1 = 1,099,511,627,775
     asset_id: [u8; 8],
     nullifier: [u8; 32],
 }
 
 struct OutputNoteAmount {
-    amount: Field,
-    asset_id: Field,
+    amount: u32, // largest value is 2^(8*5) - 1 = 1,099,511,627,775
+    asset_id: [u8; 8],
     owner: Field,
-    external_amount: Field,
 }
 
 fn main(
     private_key: [u8; 32],
-    root: pub Field,
-    input_notes: [InputNoteSpend; 5],
-    output_notes: [OutputNoteAmount; 5],
-    external_amounts: [Field; 5],
+    root: pub [u8; 32],
+    input_notes: [InputNoteSpend; 1],
+    output_notes: [OutputNoteAmount; 2],
+    external_amounts: pub [u32; 2],
 ) {
     let senderPubKey = std::hash::keccak256(private_key, 32);
 
-    let mut sum_inputs = 0;
-    // loop through all input notes and assure they belong to users pub key
+    let mut sum_inputs: u32 = 0;
+
     for i in 0..input_notes.len() {
         assert(senderPubKey == input_notes[i].address, "invalid spender");
 
-        let mut reconstructed_amount: u32 = 0;
-        for i in 0..4 {
-            reconstructed_amount |= (input_notes[i].amount[i] as u32) << (i * 8);
-        }
-
-        sum_inputs = sum_inputs + reconstructed_amount;
-
-        let note_leaf = calculate_leaf(
-            input_notes[i].address,
-            input_notes[i].amount,
-            input_notes[i].asset_id,
-        );
+        // TODO support multiple asset sum tracking
+        sum_inputs = sum_inputs + u8_array_to_u32(input_notes[i].amount);
 
         let reconstructed_nullifier = calculate_nullifier(
             input_notes[i].leaf_index,
@@ -121,50 +118,81 @@ fn main(
         );
 
         assert(input_notes[i].nullifier == reconstructed_nullifier, "Invalid nullifier");
+
+        let note_leaf = calculate_leaf(
+            input_notes[i].address,
+            input_notes[i].amount,
+            input_notes[i].asset_id,
+        );
+
+        let merkle_root =
+            compute_keccak_merkle_hash(note_leaf, input_notes[i].path, input_notes[i].path_data);
+
+        assert(root == merkle_root, "Invalid merkle proof");
     }
 
-    let sum_outputs = 0;
-}
+    let mut sum_outputs: u32 = 0;
 
-fn u32_to_u8_array(value: u32) -> [u8; 5] {
-    let mut array: [u8; 5] = [0; 5];
-    for i in 0..4 {
-        array[i] = ((value >> (i * 8)) & 0xFF) as u8;
+    let DEAD_OWNER = 0xdeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead;
+
+    for i in 0..output_notes.len() {
+        // if there's external amount, ensure output note recipient is burn address
+        if (external_amounts[i] as u64 > 0) {
+            assert(output_notes[i].owner == DEAD_OWNER, "Invalid burn note");
+            assert(output_notes[i].amount == external_amounts[i], "Ahh the sneaky edge case eh");
+        }
+        sum_outputs = sum_outputs + output_notes[i].amount;
     }
-    array
+
+    assert(sum_inputs == sum_outputs, "Not valid sorry compadre");
 }
 
 #[test]
-fn test_u32_to_u8_array() {
+fn test_u8_array_to_u32() {
     // Test case 1
-    let value: u32 = 0x12345678;
-    let expected_array: [u8; 5] = [0x78, 0x56, 0x34, 0x12, 0x00];
-    let result_array = u32_to_u8_array(value);
-    assert(result_array == expected_array, "Array does not match the expected value for 0x12345678");
+    let array: [u8; 5] = [0x78, 0x56, 0x34, 0x12, 0x00];
+    let expected_value: u32 = 0x12345678;
+    let result_value = u8_array_to_u32(array);
+    assert(
+        result_value == expected_value,
+        "Value does not match the expected value for [0x78, 0x56, 0x34, 0x12]",
+    );
 
     // Test case 2
-    let value: u32 = 0x87654321;
-    let expected_array: [u8; 5] = [0x21, 0x43, 0x65, 0x87, 0x00];
-    let result_array = u32_to_u8_array(value);
-    assert(result_array == expected_array, "Array does not match the expected value for 0x87654321");
+    let array: [u8; 5] = [0x21, 0x43, 0x65, 0x87, 0x00];
+    let expected_value: u32 = 0x87654321;
+    let result_value = u8_array_to_u32(array);
+    assert(
+        result_value == expected_value,
+        "Value does not match the expected value for [0x21, 0x43, 0x65, 0x87]",
+    );
 
     // Test case 3
-    let value: u32 = 0x00000000;
-    let expected_array: [u8; 5] = [0x00, 0x00, 0x00, 0x00, 0x00];
-    let result_array = u32_to_u8_array(value);
-    assert(result_array == expected_array, "Array does not match the expected value for 0x00000000");
+    let array: [u8; 5] = [0x00, 0x00, 0x00, 0x00, 0x00];
+    let expected_value: u32 = 0x00000000;
+    let result_value = u8_array_to_u32(array);
+    assert(
+        result_value == expected_value,
+        "Value does not match the expected value for [0x00, 0x00, 0x00, 0x00]",
+    );
 
     // Test case 4
-    let value: u32 = 0xFFFFFFFF;
-    let expected_array: [u8; 5] = [0xFF, 0xFF, 0xFF, 0xFF, 0x00];
-    let result_array = u32_to_u8_array(value);
-    assert(result_array == expected_array, "Array does not match the expected value for 0xFFFFFFFF");
+    let array: [u8; 5] = [0xFF, 0xFF, 0xFF, 0xFF, 0x00];
+    let expected_value: u32 = 0xFFFFFFFF;
+    let result_value = u8_array_to_u32(array);
+    assert(
+        result_value == expected_value,
+        "Value does not match the expected value for [0xFF, 0xFF, 0xFF, 0xFF]",
+    );
 
     // Test case 5
-    let value: u32 = 0xAABBCCDD;
-    let expected_array: [u8; 5] = [0xDD, 0xCC, 0xBB, 0xAA, 0x00];
-    let result_array = u32_to_u8_array(value);
-    assert(result_array == expected_array, "Array does not match the expected value for 0xAABBCCDD");
+    let array: [u8; 5] = [0xDD, 0xCC, 0xBB, 0xAA, 0x00];
+    let expected_value: u32 = 0xAABBCCDD;
+    let result_value = u8_array_to_u32(array);
+    assert(
+        result_value == expected_value,
+        "Value does not match the expected value for [0xDD, 0xCC, 0xBB, 0xAA]",
+    );
 }
 
 #[test]
