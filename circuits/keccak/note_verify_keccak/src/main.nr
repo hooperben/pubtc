@@ -1,5 +1,8 @@
 use std::{hash::{poseidon2::Poseidon2Hasher, BuildHasherDefault}, collections::map::HashMap};
 
+global MAX_NOTES_AMOUNT = 3;
+global AMOUNT_LENGTH = 5;
+
 pub fn concatenate_bytes32_arrays(arr1: [u8; 32], arr2: [u8; 32]) -> [u8; 64] {
     let mut result = [08; 64];
     for i in 0..32 {
@@ -83,9 +86,6 @@ fn u8_array_to_u32<let N: u32>(array: [u8; N]) -> u32 {
     }
     value
 }
-
-global MAX_NOTES_AMOUNT = 5;
-global AMOUNT_LENGTH = 5;
 
 struct InputNoteSpend {
     address: [u8; 32],
@@ -189,13 +189,13 @@ fn main(
 
     // // check that sum of inputs == outputs
     for i in 0..input_notes.len() {
-        if(inputs_map.get(input_notes[i].asset_id).unwrap_unchecked() != 0 ){
+        if (inputs_map.get(input_notes[i].asset_id).unwrap_unchecked() != 0) {
             assert(
-                inputs_map.get(input_notes[i].asset_id).unwrap_unchecked() == outputs_map.get(output_notes[i].asset_id).unwrap_unchecked(),
+                inputs_map.get(input_notes[i].asset_id).unwrap_unchecked()
+                    == outputs_map.get(output_notes[i].asset_id).unwrap_unchecked(),
             );
             inputs_map.remove(input_notes[i].asset_id);
         }
-
     }
 }
 
@@ -280,8 +280,7 @@ fn test_end_to_end() {
         asset_id: [0, 0, 0, 0, 0, 0, 0, 0],
     };
 
-    let external_amounts =
-        [external_amount, external_amount, external_amount, external_amount, external_amount];
+    let external_amounts = [external_amount, external_amount, external_amount];
 
     let output_note = OutputNoteAmount { amount: amount, asset_id: asset_id, owner: bob_pub_key };
     let empty_output_note = OutputNoteAmount {
@@ -292,10 +291,10 @@ fn test_end_to_end() {
 
     main(
         root,
-        [input_note, empty_input_note, empty_input_note, empty_input_note, empty_input_note],
-        [output_note, empty_output_note, empty_output_note, empty_output_note, empty_output_note],
+        [input_note, empty_input_note, empty_input_note],
+        [output_note, empty_output_note, empty_output_note],
         external_amounts,
-        [nullifier, nullifier, nullifier, nullifier, nullifier],
+        [nullifier, nullifier, nullifier],
     );
 }
 
