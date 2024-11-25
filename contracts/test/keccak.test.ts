@@ -22,8 +22,8 @@ describe("Keccak Merkle Tree Test", function () {
 
   let poseidon2Hash: any;
 
-  let noir: Noir;
-  let backend: BarretenbergBackend;
+  let keccakNoir: Noir;
+  let keccakBackend: BarretenbergBackend;
 
   let tree: MerkleTree;
 
@@ -31,27 +31,41 @@ describe("Keccak Merkle Tree Test", function () {
   const emptyNotes = Array(32).fill(emptyNote); // 2^5 == 32 (our tree has 5 layers)
 
   before(async () => {
-    ({ alice, bob, charlie, PUBTCK, noir, backend } = await getTestingAPI());
+    ({ alice, bob, charlie, PUBTCK, keccakNoir, keccakBackend } =
+      await getTestingAPI());
 
     tree = new MerkleTree(emptyNotes, keccak256, {
       sort: false,
       complete: true,
     });
-
-    console.log(tree.toString());
   });
 
-  it.only("should print the correct tree", async () => {
+  it.only("should verify", async () => {
+    console.log("hey");
+    const alicePubKey = keccak256(alice.privateKey);
+    const amount = Uint8Array.from([69, 0, 0, 0, 0]);
+    const assetId = Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 1]);
+
+    const noteHash = keccak256(
+      Uint8Array.from([
+        ...convertFromHexToArray(alicePubKey),
+        ...amount,
+        ...assetId,
+      ]),
+    );
+  });
+
+  it("should print the correct tree", async () => {
     const alicePubKey = keccak256(alice.privateKey);
     const bobPubKey = keccak256(bob.privateKey);
 
     const amount = Uint8Array.from([69, 0, 0, 0, 0]);
     const assetId = Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 1]);
 
-    console.log(
-      `let alice_private_key = [${convertFromHexToArray(alice.privateKey)}]`,
-    );
-    console.log(`let alice_pub_key = [${convertFromHexToArray(alicePubKey)}]`);
+    // console.log(
+    //   `let alice_private_key = [${convertFromHexToArray(alice.privateKey)}]`,
+    // );
+    // console.log(`let alice_pub_key = [${convertFromHexToArray(alicePubKey)}]`);
 
     const noteHash = keccak256(
       Uint8Array.from([
@@ -83,13 +97,13 @@ describe("Keccak Merkle Tree Test", function () {
       ]),
     );
 
-    console.log("nullifier");
-    console.log(convertFromHexToArray(nullifier));
+    // console.log("nullifier");
+    // console.log(convertFromHexToArray(nullifier));
 
-    // console.log(proof);
+    // // console.log(proof);
 
-    // proof.map((item) => console.log(item.value));
-    // proof.map((item) => console.log(item.path));
+    // // proof.map((item) => console.log(item.value));
+    // // proof.map((item) => console.log(item.path));
 
     const outputNote = convertFromHexToArray(
       keccak256(

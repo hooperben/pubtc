@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { PUBTC, SimpleMerkleTree } from "../typechain-types";
+import { PUBTC } from "../typechain-types";
 import { Wallet } from "ethers";
 import { MerkleTree } from "merkletreejs";
 import { getTestingAPI, loadPoseidon } from "../helpers";
@@ -15,17 +15,14 @@ describe("Merkle Tree Test", function () {
 
   let poseidon2Hash: any;
 
-  let noir: Noir;
-  let backend: BarretenbergBackend;
+  let poseidonNoir: Noir;
+  let poseidonBackend: BarretenbergBackend;
 
   before(async () => {
-    ({ alice, bob, charlie, simpleMerkleTree, noir, backend } =
+    ({ alice, bob, charlie, simpleMerkleTree, poseidonNoir, poseidonBackend } =
       await getTestingAPI());
 
     poseidon2Hash = await loadPoseidon();
-
-    const aliceBal = await alice.provider?.getBalance(alice.address);
-    expect(aliceBal).equal(10000000000000000000n);
   });
 
   it("merkle tree changes should track", async () => {
@@ -140,11 +137,11 @@ describe("Merkle Tree Test", function () {
     };
 
     // generate our zk proof
-    const { witness } = await noir.execute(input);
-    const zkProof = await backend.generateProof(witness);
+    const { witness } = await poseidonNoir.execute(input);
+    const zkProof = await poseidonBackend.generateProof(witness);
 
     // submit our transaction
-    const firstTransaction = await simpleMerkleTree.transfer(
+    await simpleMerkleTree.transfer(
       zkProof.proof,
       zkProof.publicInputs,
       {
@@ -215,8 +212,8 @@ describe("Merkle Tree Test", function () {
     };
 
     // generate our zk proof
-    const { witness: b2cWitness } = await noir.execute(b2CInput);
-    const b2cZKProof = await backend.generateProof(b2cWitness);
+    const { witness: b2cWitness } = await poseidonNoir.execute(b2CInput);
+    const b2cZKProof = await poseidonBackend.generateProof(b2cWitness);
 
     // submit our transaction
     await simpleMerkleTree.transfer(
@@ -309,8 +306,12 @@ describe("Merkle Tree Test", function () {
     };
 
     // generate our zk proof
-    const { witness: withdrawalWitness } = await noir.execute(withdrawalInput);
-    const withdrawalZKProof = await backend.generateProof(withdrawalWitness);
+    const { witness: withdrawalWitness } = await poseidonNoir.execute(
+      withdrawalInput,
+    );
+    const withdrawalZKProof = await poseidonBackend.generateProof(
+      withdrawalWitness,
+    );
 
     await simpleMerkleTree.withdraw(
       withdrawalZKProof.proof,

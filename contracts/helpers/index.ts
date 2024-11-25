@@ -14,18 +14,31 @@ export const getTestingAPI = async () => {
   let bob: Wallet;
   let charlie: Wallet;
 
-  let noir: Noir;
-  let backend: BarretenbergBackend;
+  let poseidonBackend: BarretenbergBackend;
+  let poseidonNoir: Noir;
+
+  let keccakBackend: BarretenbergBackend;
+  let keccakNoir: Noir;
 
   // next we initialise our Noir libraries to generate proofs
-  const circuitFile = readFileSync(
+  const poseidonCircuitFile = readFileSync(
     resolve("../circuits/poseidon/note_verify/target/note_verify.json"),
     "utf-8",
   );
-  const circuit = JSON.parse(circuitFile);
+  const poseidonCircuit = JSON.parse(poseidonCircuitFile);
 
-  backend = new BarretenbergBackend(circuit);
-  noir = new Noir(circuit);
+  poseidonBackend = new BarretenbergBackend(poseidonCircuit);
+  poseidonNoir = new Noir(poseidonCircuit);
+
+  const keccak256CircuitFile = readFileSync(
+    resolve("../circuits/keccak/note_verify/target/note_verify.json"),
+    "utf-8",
+  );
+
+  const keccakCircuit = JSON.parse(keccak256CircuitFile);
+
+  keccakBackend = new BarretenbergBackend(keccakCircuit);
+  keccakNoir = new Noir(keccakCircuit);
 
   const [funder] = await hre.ethers.getSigners();
 
@@ -67,7 +80,17 @@ export const getTestingAPI = async () => {
 
   const PUBTCK = await PUBTCKFactory.deploy(5, verifier.target);
 
-  return { simpleMerkleTree, PUBTCK, alice, bob, charlie, noir, backend };
+  return {
+    simpleMerkleTree,
+    PUBTCK,
+    alice,
+    bob,
+    charlie,
+    poseidonBackend,
+    poseidonNoir,
+    keccakBackend,
+    keccakNoir,
+  };
 };
 
 export const loadPoseidon = async () => {
