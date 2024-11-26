@@ -1,4 +1,4 @@
-global ASSET_LENGTH = 20; // eth address representation
+global ASSET_LENGTH = 20; // eth address representation (20 bytes)
 global AMOUNT_LENGTH = 32;
 global ADDRESS_LENGTH = 32;
 
@@ -36,8 +36,8 @@ fn main(
     // reconstruct the hash
     let note_leaf = calculate_leaf(pub_key, amount, asset_id);
     // check it matches
-    assert(note_leaf == hash);
-    // IMPORTANT - the hash and amount are public, we need to check these fields in solidity
+    assert(note_leaf == hash, "Invalid Deposit Hash");
+    // IMPORTANT - the hash and amount are public, we need to check these fields in solidity too
 }
 
 #[test]

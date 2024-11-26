@@ -18,11 +18,15 @@ https://docs.google.com/presentation/d/1xvbygNVBei91_tnhPpN-txfTU43KPVPc51BcULWM
 
 Contains the note_verify circuit that powers this sorcery. This is a noir circuit, that complies to a solidity verifier contract.
 
-### `contracts`
+### `contracts/`
 
 Contains `PUBTC.sol` - a private, wrapped bitcoin token implementation. This deployment calls a verifier function generated from the circuits/ directory.
 
-### Getting things working
+### `bashings/`
+
+Contains utility scripts that covert the circuits to verifier contracts.
+
+## Getting things working
 
 To build our solidity verifier contract:
 
