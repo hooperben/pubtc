@@ -6,8 +6,10 @@ global ASSET_LENGTH = 20; // eth address representation (20 bytes)
 global AMOUNT_LENGTH = 32;
 global FIELD_LENGTH = 32;
 global ADDRESS_LENGTH = 32;
+global LEAF_INDEX_LENGTH = 8;
 
 global SUM_OF_INPUT_LEN = ADDRESS_LENGTH + AMOUNT_LENGTH + ASSET_LENGTH;
+global NULLIFIER_PREIMAGE_LEN = LEAF_INDEX_LENGTH + ADDRESS_LENGTH + AMOUNT_LENGTH + ASSET_LENGTH;
 global DEAD_OWNER = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
@@ -26,6 +28,7 @@ pub fn concatenate_bytes32_arrays(
     result
 }
 
+// N == number of layers in the tree
 pub fn compute_keccak_merkle_hash<let N: u32>(
     leaf: [u8; FIELD_LENGTH],
     path: [Field; N],
@@ -69,27 +72,27 @@ pub fn calculate_leaf(
 }
 
 pub fn calculate_nullifier(
-    leaf_index: [u8; 8], // TODO investigate length
+    leaf_index: [u8; LEAF_INDEX_LENGTH], // TODO investigate length
     address: [u8; ADDRESS_LENGTH],
     amount: [u8; AMOUNT_LENGTH],
     asset_id: [u8; ASSET_LENGTH],
 ) -> [u8; 32] {
-    let mut concat_values = [0; 8 + ADDRESS_LENGTH + AMOUNT_LENGTH + ASSET_LENGTH];
-    for i in 0..8 {
+    let mut concat_values = [0; NULLIFIER_PREIMAGE_LEN];
+    for i in 0..LEAF_INDEX_LENGTH {
         concat_values[i] = leaf_index[i];
     }
     for i in 0..ADDRESS_LENGTH {
-        concat_values[i + 8] = address[i];
+        concat_values[i + LEAF_INDEX_LENGTH] = address[i];
     }
     for i in 0..AMOUNT_LENGTH {
-        concat_values[i + 8 + ADDRESS_LENGTH] = amount[i];
+        concat_values[i + LEAF_INDEX_LENGTH + ADDRESS_LENGTH] = amount[i];
     }
     for i in 0..ASSET_LENGTH {
-        concat_values[i + 8 + ADDRESS_LENGTH + AMOUNT_LENGTH] = asset_id[i];
+        concat_values[i + LEAF_INDEX_LENGTH + ADDRESS_LENGTH + AMOUNT_LENGTH] = asset_id[i];
     }
     std::hash::keccak256(
         concat_values,
-        8 + ADDRESS_LENGTH + AMOUNT_LENGTH + ASSET_LENGTH,
+        NULLIFIER_PREIMAGE_LEN,
     )
 }
 
@@ -136,7 +139,7 @@ fn main(
     let mut outputs_map: HashMap<ASSET_ID_TYPE, u32, MAX_NOTES_AMOUNT, BuildHasherDefault<Poseidon2Hasher>> =
         HashMap::default();
 
-    for i in 0..input_notes.len() {
+    for i in 0..MAX_NOTES_AMOUNT {
         if input_notes[i].amount != [0; 32] {
             let senderPubKey = std::hash::keccak256(input_notes[i].private_key, FIELD_LENGTH);
 
@@ -174,7 +177,7 @@ fn main(
         }
     }
 
-    for i in 0..output_notes.len() {
+    for i in 0..MAX_NOTES_AMOUNT {
         if output_notes[i].amount != [0; 32] {
             let converted_output_note: u32 =
                 u8_array_to_u32::<FIELD_LENGTH>(output_notes[i].amount);
@@ -288,6 +291,9 @@ fn test_end_to_end() {
         asset_id: asset_id,
     };
 
+    let output_note = OutputNoteAmount { amount: amount, asset_id: asset_id, owner: bob_pub_key };
+
+
     let empty_field = [0; 32];
     let external_amount = [0; 32];
     let empty_asset_id = [0; 20];
@@ -304,7 +310,6 @@ fn test_end_to_end() {
 
     let external_amounts = [external_amount, external_amount, external_amount, external_amount];
 
-    let output_note = OutputNoteAmount { amount: amount, asset_id: asset_id, owner: bob_pub_key };
     let empty_output_note =
         OutputNoteAmount { amount: external_amount, asset_id: empty_asset_id, owner: empty_field };
 
