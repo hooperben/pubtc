@@ -1,55 +1,62 @@
-global AMOUNT_LENGTH = 5;
+global ASSET_LENGTH = 20; // eth address representation
+global AMOUNT_LENGTH = 32;
+global ADDRESS_LENGTH = 32;
+
+global SUM_OF_INPUT_LEN = ADDRESS_LENGTH + AMOUNT_LENGTH + ASSET_LENGTH;
 
 pub fn calculate_leaf(
-    address: [u8; 32],
+    address: [u8; ADDRESS_LENGTH],
     amount: [u8; AMOUNT_LENGTH],
-    asset_id: [u8; 8],
+    asset_id: [u8; ASSET_LENGTH],
 ) -> [u8; 32] {
     // need to combine into one giga array
-    let mut concat_values = [0; 72];
-    for i in 0..32 {
+    let mut concat_values = [0; SUM_OF_INPUT_LEN];
+
+    for i in 0..ADDRESS_LENGTH {
         concat_values[i] = address[i];
     }
-    for i in 0..5 {
-        concat_values[i + 32] = amount[i];
+    for i in 0..AMOUNT_LENGTH {
+        concat_values[i + ADDRESS_LENGTH] = amount[i];
     }
-    for i in 0..8 {
-        concat_values[i + 37] = asset_id[i];
+    for i in 0..ASSET_LENGTH {
+        concat_values[i + ADDRESS_LENGTH + AMOUNT_LENGTH] = asset_id[i];
     }
 
-    let current = std::hash::keccak256(concat_values, 45);
+    let current = std::hash::keccak256(concat_values, SUM_OF_INPUT_LEN);
 
     current
 }
 
-fn main(hash: pub [u8; 32], pubKey: [u8; 32], amount: pub [u8; AMOUNT_LENGTH], asset_id: [u8; 8]) {
-    let note_leaf = calculate_leaf(pubKey, amount, asset_id);
+fn main(
+    hash: pub [u8; ADDRESS_LENGTH],
+    amount: pub [u8; AMOUNT_LENGTH],
+    pub_key: [u8; ADDRESS_LENGTH],
+    asset_id: [u8; ASSET_LENGTH],
+) {
+    // reconstruct the hash
+    let note_leaf = calculate_leaf(pub_key, amount, asset_id);
+    // check it matches
     assert(note_leaf == hash);
-}
-
-#[test]
-fn test_keccak() {
-    let input = [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100]; //  in TS: ethers.toUtf8Bytes("hello world");
-    let input_digest = std::hash::keccak256(input, input.len());
-
-    let output = [
-        71, 23, 50, 133, 168, 215, 52, 30, 94, 151, 47, 198, 119, 40, 99, 132, 248, 2, 248, 239, 66,
-        165, 236, 95, 3, 187, 250, 37, 76, 176, 31, 173,
-    ]; // see scripts/keccak.ts on how we got this value
-    assert(input_digest == output);
+    // IMPORTANT - the hash and amount are public, we need to check these fields in solidity
 }
 
 #[test]
 fn test_main() {
-    // main(1, 2);
-    // Uncomment to make test fail
-    // main(1, 1);
     let alice_pub_key = [
         21, 224, 205, 149, 237, 0, 205, 99, 38, 172, 38, 165, 191, 145, 144, 38, 70, 82, 182, 85,
         249, 156, 90, 212, 128, 198, 159, 121, 167, 52, 30, 202,
     ];
-    let amount = [69, 0, 0, 0, 0];
-    let asset_id = [0, 0, 0, 0, 0, 0, 0, 1];
+    let amount = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 39, 0, 0, 0, 0, 0, 0,
+        0, 0,
+    ];
+    let asset_id =
+        [192, 42, 170, 57, 178, 35, 254, 141, 10, 14, 92, 79, 39, 234, 217, 8, 60, 117, 108, 194];
 
-    
+    let note_hash = [
+        248, 235, 0, 140, 179, 142, 141, 180, 70, 193, 118, 68, 106, 183, 233, 191, 111, 9, 78, 250,
+        23, 96, 171, 113, 17, 100, 75, 241, 145, 97, 201, 55,
+    ];
+
+    main(note_hash, amount, alice_pub_key, asset_id);
 }
