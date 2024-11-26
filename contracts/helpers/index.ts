@@ -8,37 +8,23 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 
 export const getTestingAPI = async () => {
-  let simpleMerkleTree: PUBTC;
-
-  let alice: Wallet;
-  let bob: Wallet;
-  let charlie: Wallet;
-
-  let poseidonBackend: BarretenbergBackend;
-  let poseidonNoir: Noir;
-
-  let keccakBackend: BarretenbergBackend;
-  let keccakNoir: Noir;
-
-  // next we initialise our Noir libraries to generate proofs
-  const poseidonCircuitFile = readFileSync(
-    resolve("../circuits/poseidon/note_verify/target/note_verify.json"),
-    "utf-8",
-  );
-  const poseidonCircuit = JSON.parse(poseidonCircuitFile);
-
-  poseidonBackend = new BarretenbergBackend(poseidonCircuit);
-  poseidonNoir = new Noir(poseidonCircuit);
-
-  const keccak256CircuitFile = readFileSync(
+  // note circuit
+  const keccakNoteCircuitFile = readFileSync(
     resolve("../circuits/keccak/note_verify/target/note_verify.json"),
     "utf-8",
   );
+  const keccakNoteCircuit = JSON.parse(keccakNoteCircuitFile);
+  const keccakNoteBackend = new BarretenbergBackend(keccakNoteCircuit);
+  const keccakNoteNoir = new Noir(keccakNoteCircuit);
 
-  const keccakCircuit = JSON.parse(keccak256CircuitFile);
-
-  keccakBackend = new BarretenbergBackend(keccakCircuit);
-  keccakNoir = new Noir(keccakCircuit);
+  // deposit circuit
+  const keccakDepositCircuitFile = readFileSync(
+    resolve("../circuits/keccak/deposit/target/deposit_keccak.json"),
+    "utf-8",
+  );
+  const keccakDepositCircuit = JSON.parse(keccakDepositCircuitFile);
+  const keccakDepositBackend = new BarretenbergBackend(keccakDepositCircuit);
+  const keccakDepositNoir = new Noir(keccakDepositCircuit);
 
   const [funder] = await hre.ethers.getSigners();
 
@@ -49,9 +35,9 @@ export const getTestingAPI = async () => {
   const charlie_private_key =
     "0x58409f99febb8326dff7fd504d8dd1978a26c00af8029754d83948b0e88b8362";
 
-  alice = new ethers.Wallet(alice_private_key, hre.ethers.provider);
-  bob = new ethers.Wallet(bob_private_key, hre.ethers.provider);
-  charlie = new ethers.Wallet(charlie_private_key, hre.ethers.provider);
+  const alice = new ethers.Wallet(alice_private_key, hre.ethers.provider);
+  const bob = new ethers.Wallet(bob_private_key, hre.ethers.provider);
+  const charlie = new ethers.Wallet(charlie_private_key, hre.ethers.provider);
 
   // Fund alice and bob with 10 ETH each
   await funder.sendTransaction({
@@ -69,35 +55,29 @@ export const getTestingAPI = async () => {
     value: ethers.parseEther("10.0"),
   });
 
-  const NoteVerifier = await hre.ethers.getContractFactory("UltraVerifier");
-  let verifier = await NoteVerifier.deploy();
+  const NoteVerifier = await hre.ethers.getContractFactory("NotesVerifier");
+  const noteVerifier = await NoteVerifier.deploy();
 
-  const SimpleMerkleTree = await hre.ethers.getContractFactory("PUBTC");
+  const DepositVerifier = await hre.ethers.getContractFactory(
+    "DepositVerifier",
+  );
+  const depositVerifier = await DepositVerifier.deploy();
 
-  simpleMerkleTree = await SimpleMerkleTree.deploy(5, verifier.target);
-
-  const PUBTCKFactory = await hre.ethers.getContractFactory("PUBTCK");
-
-  const PUBTCK = await PUBTCKFactory.deploy(5, verifier.target);
+  const PUBTC = await hre.ethers.getContractFactory("PUBTC");
+  const puBTC = await PUBTC.deploy(
+    5, // height of merkle tree
+    noteVerifier.target,
+    depositVerifier.target,
+  );
 
   return {
-    simpleMerkleTree,
-    PUBTCK,
+    puBTC,
     alice,
     bob,
     charlie,
-    poseidonBackend,
-    poseidonNoir,
-    keccakBackend,
-    keccakNoir,
+    keccakNoteBackend,
+    keccakNoteNoir,
+    keccakDepositBackend,
+    keccakDepositNoir,
   };
-};
-
-export const loadPoseidon = async () => {
-  // Use Function constructor to avoid CommonJS static analysis
-  const importModule = new Function(
-    'return import("@aztec/foundation/crypto")',
-  );
-  const module = await importModule();
-  return module.poseidon2Hash;
 };

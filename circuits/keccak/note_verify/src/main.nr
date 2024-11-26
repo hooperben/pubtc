@@ -15,15 +15,15 @@ global DEAD_OWNER = [
 ];
 
 pub fn concatenate_bytes32_arrays(
-    arr1: [u8; FIELD_LENGTH],
-    arr2: [u8; FIELD_LENGTH],
+    left: [u8; FIELD_LENGTH],
+    right: [u8; FIELD_LENGTH],
 ) -> [u8; FIELD_LENGTH + FIELD_LENGTH] {
     let mut result = [0; FIELD_LENGTH + FIELD_LENGTH];
     for i in 0..FIELD_LENGTH {
-        result[i] = arr1[i];
+        result[i] = left[i];
     }
     for i in 0..FIELD_LENGTH {
-        result[i + FIELD_LENGTH] = arr2[i];
+        result[i + FIELD_LENGTH] = right[i];
     }
     result
 }

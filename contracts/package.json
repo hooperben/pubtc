@@ -2,7 +2,7 @@
   "name": "contracts",
   "module": "index.ts",
   "scripts": {
-    "build-keccak": "../bashings/build-circuit.sh keccak"
+    "build-keccak": "../bashings/build-circuits.sh keccak"
   },
   "devDependencies": {
     "@aztec/foundation": "^0.62.0",
