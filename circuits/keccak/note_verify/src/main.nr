@@ -1,6 +1,6 @@
 use std::{hash::{poseidon2::Poseidon2Hasher, BuildHasherDefault}, collections::map::HashMap};
 
-global MAX_NOTES_AMOUNT = 3;
+global MAX_NOTES_AMOUNT = 4;
 global TREE_HEIGHT = 5;
 global ASSET_LENGTH = 20; // eth address representation (20 bytes)
 global AMOUNT_LENGTH = 32;
@@ -302,7 +302,7 @@ fn test_end_to_end() {
         asset_id: empty_asset_id,
     };
 
-    let external_amounts = [external_amount, external_amount, external_amount];
+    let external_amounts = [external_amount, external_amount, external_amount, external_amount];
 
     let output_note = OutputNoteAmount { amount: amount, asset_id: asset_id, owner: bob_pub_key };
     let empty_output_note =
@@ -315,10 +315,10 @@ fn test_end_to_end() {
 
     main(
         root,
-        [input_note, empty_input_note, empty_input_note],
-        [output_note, empty_output_note, empty_output_note],
+        [input_note, empty_input_note, empty_input_note, empty_input_note],
+        [output_note, empty_output_note, empty_output_note, empty_output_note],
         external_amounts,
-        [nullifier, [0; 32], [0; 32]],
-        [output_hash, [0; 32], [0; 32]],
+        [nullifier, [0; 32], [0; 32], [0; 32]],
+        [output_hash, [0; 32], [0; 32], [0; 32]],
     );
 }
