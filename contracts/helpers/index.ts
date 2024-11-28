@@ -42,17 +42,17 @@ export const getTestingAPI = async () => {
   // Fund alice and bob with 10 ETH each
   await funder.sendTransaction({
     to: alice.address,
-    value: ethers.parseEther("10.0"),
+    value: ethers.parseEther("1000.0"),
   });
 
   await funder.sendTransaction({
     to: bob.address,
-    value: ethers.parseEther("10.0"),
+    value: ethers.parseEther("1000.0"),
   });
 
   await funder.sendTransaction({
     to: charlie.address,
-    value: ethers.parseEther("10.0"),
+    value: ethers.parseEther("1000.0"),
   });
 
   const NoteVerifier = await hre.ethers.getContractFactory("NotesVerifier");
