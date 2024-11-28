@@ -26,6 +26,47 @@ contract PUBTC is SimpleMerkleTree {
         return amount;
     }
 
+    function endsWith(bytes32 data, uint256 value) public pure returns (bool) {
+        for (uint256 i = 0; i < 32; i++) {
+            uint8 dataByte = uint8(data[31 - i]);
+            uint8 valueByte = uint8(value >> (i * 8));
+            if (dataByte != valueByte) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function fullArrayConversion(
+        bytes32[] calldata _publicInputs
+    ) public payable {
+        bytes1[] memory recon = new bytes1[](32);
+        bytes memory tester = new bytes(32);
+
+        uint256 full = 0;
+
+        for (uint i = 0; i < 32; i++) {
+            bytes1 rightmostByte = _publicInputs[i][31];
+
+            recon[i] = rightmostByte;
+            console.logBytes1(rightmostByte);
+
+            // full = full + uint256(rightmostByte) * 10 ** 31 - i;
+            // full = full * 10 + uint256(rightmostByte);
+
+            // console.log(uint256(rightmostByte));
+        }
+
+        console.log(full);
+        // for (uint i = 0; i < 32; i++) {
+        // console.logBytes(abi.encodePacked("1", "2"));
+        // }
+        // console.log(reconUint256);
+
+        console.log(msg.value);
+    }
+
     function deposit(
         bytes calldata _proof,
         bytes32[] calldata _publicInputs,
@@ -34,14 +75,26 @@ contract PUBTC is SimpleMerkleTree {
         require(_publicInputs.length == 64, "Invalid public inputs length");
 
         bytes32 reconstructedLeaf;
-        uint256 reconstructedAmount;
+        bytes32 reconstructedAmount = 0;
+
         for (uint i = 0; i < 32; i++) {
             reconstructedLeaf |= bytes32(
                 uint256(uint8(uint256(_publicInputs[i]))) << (248 - i * 8)
             );
-
-            reconstructedAmount = convertToUint256(_publicInputs, 32, 64);
+            reconstructedAmount |= bytes32(
+                uint256(uint8(uint256(_publicInputs[i + 32]))) << (248 - i * 8)
+            );
         }
+
+        console.log(msg.value);
+        console.logBytes32(reconstructedAmount);
+
+        uint256 extractedValue = uint256(reconstructedAmount) &
+            ((1 << 160) - 1);
+        console.log(extractedValue);
+
+        bytes32 msgValueBytes32 = bytes32(uint256(msg.value));
+        console.logBytes32(msgValueBytes32);
 
         require(
             leaf == reconstructedLeaf,
