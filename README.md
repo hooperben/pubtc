@@ -66,6 +66,7 @@ https://explorer.testnet.citrea.xyz/tx/0xa94dcd2895814982761142f46c55fcad12098bb
 ### Active Problems / Optimisations
 
 - Need to prove msg.value is what is in the note when inserted
+- Need to move to noir v1
 - Need to sum and check public inputs in solidity for withdrawals
 - If I can migrate the zk from using a poseidon hash to using a keccak hash, it will make transfers/withdraws 75% cheaper in the EVM
 - I need to bake the withdrawal address into the proof to avoid front running
